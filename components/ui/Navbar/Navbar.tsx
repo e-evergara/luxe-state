@@ -13,6 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -135,29 +136,62 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
               <span className="material-icons">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
 
+            {/* i18n / Language toggle */}
+            <button
+              aria-label="Change language"
+              className="text-nordic-dark hover:text-mosque dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <span className="material-icons text-xl">language</span>
+            </button>
+
             {/* Avatar or Login */}
-            <div className="flex items-center gap-2 pl-2 border-l border-nordic-dark/10 dark:border-white/10 ml-2">
+            <div className="relative flex items-center gap-2 pl-2 border-l border-nordic-dark/10 dark:border-white/10 ml-2">
               {user ? (
-                <button
-                  onClick={() => supabaseBrowserClient.auth.signOut()}
-                  className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden ring-2 ring-transparent hover:ring-mosque transition-all relative cursor-pointer"
-                  title="Sign out"
-                >
-                  {user.user_metadata?.avatar_url ? (
-                    <Image
-                      alt={user.user_metadata?.full_name || "Profile"}
-                      className="object-cover"
-                      src={user.user_metadata.avatar_url}
-                      fill
-                      sizes="36px"
-                      priority
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-full bg-mosque text-white text-sm font-semibold uppercase">
-                      {user.email?.charAt(0) || 'U'}
+                <>
+                  <button
+                    onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+                    className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden ring-2 ring-transparent hover:ring-mosque transition-all relative cursor-pointer"
+                    title="Profile menu"
+                  >
+                    {user.user_metadata?.avatar_url ? (
+                      <Image
+                        alt={user.user_metadata?.full_name || "Profile"}
+                        className="object-cover"
+                        src={user.user_metadata.avatar_url}
+                        fill
+                        sizes="36px"
+                        priority
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full bg-mosque text-white text-sm font-semibold uppercase">
+                        {user.email?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Profile Dropdown */}
+                  {avatarMenuOpen && (
+                    <div className="absolute right-0 top-full mt-3 w-48 bg-white dark:bg-[#152e2a] rounded-xl shadow-lg border border-nordic-dark/5 dark:border-white/10 overflow-hidden z-50">
+                      <div className="px-4 py-3 border-b border-nordic-dark/5 dark:border-white/5">
+                        <p className="text-sm font-medium text-nordic-dark dark:text-white truncate">
+                          {user.user_metadata?.full_name || user.email}
+                        </p>
+                      </div>
+                      <div className="p-1">
+                        <button
+                          onClick={() => {
+                            setAvatarMenuOpen(false);
+                            supabaseBrowserClient.auth.signOut();
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <span className="material-icons text-sm">logout</span>
+                          Sign out
+                        </button>
+                      </div>
                     </div>
                   )}
-                </button>
+                </>
               ) : (
                 <Link
                   href="/login"

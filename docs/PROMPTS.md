@@ -64,3 +64,10 @@
     Invalid src prop (https://avatars.githubusercontent.com/u/3438503?v=4) on `next/image`, hostname "avatars.githubusercontent.com" is not configured under images in your `next.config.js`
     See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
 ```
+
+3.2 Add bottom closed session in navbar
+```Text
+  Necesito que el diseño del login, luzca igual al de la imagen proporcionada, ya que actualmente los colores no son los mismos.
+  También, necesito en el navbar una manera de cerrar sesión
+  Necesito un botón que siga el i18n para poder llamar la pantalla del login
+```
