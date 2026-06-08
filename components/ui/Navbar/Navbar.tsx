@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface NavbarProps {
   currentTab?: string;
@@ -10,6 +13,24 @@ interface NavbarProps {
 
 export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabaseBrowserClient.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowserClient.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Read the current dark class from <html> lazily (runs once on mount, client-side only)
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof document !== 'undefined') {
@@ -114,19 +135,38 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
               <span className="material-icons">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Avatar */}
-            <button className="flex items-center gap-2 pl-2 border-l border-nordic-dark/10 dark:border-white/10 ml-2 cursor-pointer">
-              <div className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden ring-2 ring-transparent hover:ring-mosque transition-all relative">
-                <Image
-                  alt="Profile"
-                  className="object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAWhQZ663Bd08kmzjbOPmUk4UIxYooNONShMEFXLR-DtmVi6Oz-TiaY77SPwFk7g0OobkeZEOMvt6v29mSOD0Xm2g95WbBG3ZjWXmiABOUwGU0LOySRfVDo-JTXQ0-gtwjWxbmue0qDm91m-zEOEZwAW6iRFB1qC1bAU-wkjxm67Sbztq8w7srHkFT9bVEC86qG-FzhOBTomhAurNRmx9l8Yfqabk328NfdKuVLckgCdaPsNFE3yN65MeoRi05GA_gXIMwG4YDIeA"
-                  fill
-                  sizes="36px"
-                  priority
-                />
-              </div>
-            </button>
+            {/* Avatar or Login */}
+            <div className="flex items-center gap-2 pl-2 border-l border-nordic-dark/10 dark:border-white/10 ml-2">
+              {user ? (
+                <button
+                  onClick={() => supabaseBrowserClient.auth.signOut()}
+                  className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden ring-2 ring-transparent hover:ring-mosque transition-all relative cursor-pointer"
+                  title="Sign out"
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <Image
+                      alt={user.user_metadata?.full_name || "Profile"}
+                      className="object-cover"
+                      src={user.user_metadata.avatar_url}
+                      fill
+                      sizes="36px"
+                      priority
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-mosque text-white text-sm font-semibold uppercase">
+                      {user.email?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-white bg-mosque hover:bg-mosque/90 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           </div>
 
         </div>
