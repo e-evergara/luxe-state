@@ -71,3 +71,20 @@
   También, necesito en el navbar una manera de cerrar sesión
   Necesito un botón que siga el i18n para poder llamar la pantalla del login
 ```
+
+4.1 Dashboard Page 
+```Text
+  Vamos a crear un dashboard administrativo que permita:
+
+  - Ver las propiedades actuales
+  - Editar roles de los usuarios autenticados en nuestra aplicación, crea una tabla en base de datos para esta labor
+  - Crea un middleware para validar el role del usuario
+  
+```
+
+4.1.1 User roles
+```Text
+  Necesito que todos los usuarios que se autentiquen en nuestra aplicación, creen un registro en la tabla de user_roles con el role por defecto.
+
+  El middleware no me está dejando entrar a la ruta /admin/dashboard aunque el usuario sea administrador 
+```
