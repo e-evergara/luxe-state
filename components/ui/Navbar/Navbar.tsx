@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 interface NavbarProps {
   currentTab?: string;
@@ -15,6 +17,7 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Get initial session
@@ -87,20 +90,20 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
                     : 'text-nordic-dark/70 dark:text-white/60 hover:text-nordic-dark dark:hover:text-white hover:border-b-2 hover:border-nordic-dark/20'
                 }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {t(`nav.${tab}`)}
               </a>
             ))}
             <a
               href="#"
               className="text-nordic-dark/70 dark:text-white/60 hover:text-nordic-dark dark:hover:text-white font-medium text-sm hover:border-b-2 hover:border-nordic-dark/20 px-1 py-1 transition-all"
             >
-              Sell
+              {t('nav.sell')}
             </a>
             <a
               href="#"
               className="text-nordic-dark/70 dark:text-white/60 hover:text-nordic-dark dark:hover:text-white font-medium text-sm hover:border-b-2 hover:border-nordic-dark/20 px-1 py-1 transition-all"
             >
-              Saved Homes
+              {t('nav.savedHomes')}
             </a>
           </div>
 
@@ -137,12 +140,7 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
             </button>
 
             {/* i18n / Language toggle */}
-            <button
-              aria-label="Change language"
-              className="text-nordic-dark hover:text-mosque dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <span className="material-icons text-xl">language</span>
-            </button>
+            <LanguageSwitcher />
 
             {/* Avatar or Login */}
             <div className="relative flex items-center gap-2 pl-2 border-l border-nordic-dark/10 dark:border-white/10 ml-2">
@@ -186,7 +184,7 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
                           className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
                         >
                           <span className="material-icons text-sm">logout</span>
-                          Sign out
+                          {t('nav.signOut')}
                         </button>
                       </div>
                     </div>
@@ -197,7 +195,7 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
                   href="/login"
                   className="text-sm font-medium text-white bg-mosque hover:bg-mosque/90 px-4 py-2 rounded-lg transition-colors cursor-pointer"
                 >
-                  Sign In
+                  {t('nav.signIn')}
                 </Link>
               )}
             </div>
@@ -224,14 +222,14 @@ export function Navbar({ currentTab = 'all', onTabChange }: NavbarProps) {
                   : 'text-nordic-dark dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
               }`}
             >
-              {tab}
+              {t(`nav.${tab}`)}
             </a>
           ))}
           <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-nordic-dark dark:text-white hover:bg-black/5 dark:hover:bg-white/5">
-            Sell
+            {t('nav.sell')}
           </a>
           <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-nordic-dark dark:text-white hover:bg-black/5 dark:hover:bg-white/5">
-            Saved Homes
+            {t('nav.savedHomes')}
           </a>
         </div>
       </div>
