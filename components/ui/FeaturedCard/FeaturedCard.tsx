@@ -5,12 +5,11 @@ import { Property } from '@/types/property';
 
 interface FeaturedCardProps {
   property: Property;
-  isFavorite: boolean;
-  onToggleFavorite: (e: React.MouseEvent) => void;
 }
 
-export function FeaturedCard({ property, isFavorite, onToggleFavorite }: FeaturedCardProps) {
+export function FeaturedCard({ property }: FeaturedCardProps) {
   const formattedPrice = property.price.toLocaleString('en-US');
+  const coverImage = property.images[0]?.url ?? '';
 
   return (
     <div className="group relative rounded-xl overflow-hidden shadow-soft bg-white dark:bg-white/5 cursor-pointer">
@@ -18,7 +17,7 @@ export function FeaturedCard({ property, isFavorite, onToggleFavorite }: Feature
         <Image
           alt={property.title}
           className="object-cover transition-transform duration-700 group-hover:scale-105"
-          src={property.image}
+          src={coverImage}
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"
           priority
@@ -28,16 +27,6 @@ export function FeaturedCard({ property, isFavorite, onToggleFavorite }: Feature
             {property.tag}
           </div>
         )}
-        <button
-          onClick={onToggleFavorite}
-          className={`absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-mosque hover:text-white transition-all z-10 cursor-pointer ${
-            isFavorite ? 'text-red-500' : 'text-nordic-dark dark:text-white'
-          }`}
-        >
-          <span className="material-icons text-xl leading-none">
-            {isFavorite ? 'favorite' : 'favorite_border'}
-          </span>
-        </button>
         <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent opacity-60 pointer-events-none"></div>
       </div>
       <div className="p-6 relative">

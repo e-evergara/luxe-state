@@ -1,123 +1,95 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
 import { Property } from '@/types/property';
 import { Navbar } from '@/components/ui/Navbar';
 import { FeaturedCard } from '@/components/ui/FeaturedCard';
 import { PropertyCard } from '@/components/ui/PropertyCard';
+import { Pagination } from '@/components/ui/Pagination/Pagination';
 
 interface HomeScreenProps {
-  initialProperties: Property[];
+  // Paginated standard properties
+  properties: Property[];
+  totalPages: number;
+  currentPage: number;
+  // Featured (not paginated)
+  featuredProperties: Property[];
+  // Active filter values (from URL, parsed by server)
+  activeType: string;
+  activePurpose: string;
+  activeSearch: string;
 }
 
 type PropertyType = 'all' | 'house' | 'apartment' | 'villa' | 'penthouse';
 type PurposeType = 'all' | 'buy' | 'rent';
 
-export function HomeScreen({ initialProperties }: HomeScreenProps) {
-  // Use initialProperties as the data source (read-only list for filtering)
-  const properties = initialProperties;
+export function HomeScreen({
+  properties,
+  totalPages,
+  currentPage,
+  featuredProperties,
+  activeType,
+  activePurpose,
+  activeSearch,
+}: HomeScreenProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Favorites list tracking (using set of IDs)
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  // -------------------------------------------------------------------------
+  // URL param helpers
+  // -------------------------------------------------------------------------
 
-  // Filters state
-  const [selectedType, setSelectedType] = useState<PropertyType>('all');
-  const [selectedPurpose, setSelectedPurpose] = useState<PurposeType>('all');
-  const [searchInput, setSearchInput] = useState('');
-  const [activeSearchQuery, setActiveSearchQuery] = useState('');
-  
-  // Load more simulation
-  const [visibleLimit, setVisibleLimit] = useState(6);
+  /** Build a new URL preserving existing params, then pushing a new one */
+  const buildUrl = useCallback(
+    (updates: Record<string, string>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!value || value === 'all') {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+      // Reset to page 1 on any filter change
+      params.delete('page');
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [pathname, searchParams],
+  );
 
-  // Toggle favorite handler
-  const handleToggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const handleTypeChange = (type: PropertyType) => {
+    router.push(buildUrl({ type }));
   };
 
-  // Search handler
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setActiveSearchQuery(searchInput);
+  const handlePurposeChange = (purpose: PurposeType) => {
+    router.push(buildUrl({ purpose }));
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchInput(value);
-    // Real-time filtering makes it feel premium
-    setActiveSearchQuery(value);
-  };
-
-  // Filter properties
-  const filteredFeatured = useMemo(() => {
-    return properties.filter((prop) => {
-      if (!prop.isFeatured) return false;
-      
-      // Filter by type
-      if (selectedType !== 'all' && prop.type !== selectedType) return false;
-      
-      // Filter by search query
-      if (activeSearchQuery) {
-        const query = activeSearchQuery.toLowerCase();
-        const matchesTitle = prop.title.toLowerCase().includes(query);
-        const matchesLocation = prop.location.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesLocation) return false;
-      }
-      
-      return true;
-    });
-  }, [properties, selectedType, activeSearchQuery]);
-
-  const filteredStandard = useMemo(() => {
-    return properties.filter((prop) => {
-      if (prop.isFeatured) return false;
-
-      // Filter by type
-      if (selectedType !== 'all' && prop.type !== selectedType) return false;
-
-      // Filter by purpose (buy/rent)
-      if (selectedPurpose !== 'all' && prop.purpose !== selectedPurpose) return false;
-
-      // Filter by search query
-      if (activeSearchQuery) {
-        const query = activeSearchQuery.toLowerCase();
-        const matchesTitle = prop.title.toLowerCase().includes(query);
-        const matchesLocation = prop.location.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesLocation) return false;
-      }
-
-      return true;
-    });
-  }, [properties, selectedType, selectedPurpose, activeSearchQuery]);
-
-  // Handle load more
-  const handleLoadMore = () => {
-    setVisibleLimit((prev) => prev + 4);
-  };
-
-  // Sync active purpose from Navbar clicks
   const handleNavbarTabChange = (tab: 'all' | 'buy' | 'rent') => {
-    setSelectedPurpose(tab);
+    router.push(buildUrl({ purpose: tab }));
   };
 
-  // Get responsive classes to match HTML grid layout
-  const getResponsiveClass = (index: number) => {
-    if (index === 4) return 'hidden xl:flex';
-    if (index === 5) return 'hidden lg:flex';
-    return 'flex';
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const search = (fd.get('search') as string) ?? '';
+    router.push(buildUrl({ search }));
   };
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
   return (
     <div className="min-h-screen flex flex-col font-sans antialiased selection:bg-mosque selection:text-white">
       {/* Dynamic Navbar */}
-      <Navbar currentTab={selectedPurpose} onTabChange={handleNavbarTabChange} />
+      <Navbar
+        currentTab={activePurpose as PurposeType}
+        onTabChange={handleNavbarTabChange}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full flex-grow">
         {/* Hero Section */}
@@ -128,11 +100,15 @@ export function HomeScreen({ initialProperties }: HomeScreenProps) {
               <span className="relative inline-block">
                 <span className="relative z-10 font-medium">sanctuary</span>
                 <span className="absolute bottom-2 left-0 w-full h-3 bg-mosque/20 -rotate-1 z-0"></span>
-              </span>.
+              </span>
+              .
             </h1>
 
             {/* Search Input Form */}
-            <form onSubmit={handleSearchSubmit} className="relative group max-w-2xl mx-auto">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative group max-w-2xl mx-auto"
+            >
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <span className="material-icons text-nordic-muted text-2xl group-focus-within:text-mosque transition-colors">
                   search
@@ -140,8 +116,9 @@ export function HomeScreen({ initialProperties }: HomeScreenProps) {
               </div>
               <input
                 type="text"
-                value={searchInput}
-                onChange={handleSearchChange}
+                name="search"
+                defaultValue={activeSearch}
+                key={activeSearch} /* re-mount when server updates value */
                 className="block w-full pl-12 pr-28 py-4 rounded-xl border-none bg-white dark:bg-white/5 text-nordic-dark dark:text-white shadow-soft placeholder-nordic-muted/60 focus:ring-2 focus:ring-mosque focus:bg-white dark:focus:bg-white/10 transition-all text-lg focus:outline-none"
                 placeholder="Search by city, neighborhood, or address..."
               />
@@ -155,19 +132,23 @@ export function HomeScreen({ initialProperties }: HomeScreenProps) {
 
             {/* Property Types Tabs */}
             <div className="flex items-center justify-center gap-3 overflow-x-auto hide-scroll py-2 px-4 -mx-4">
-              {(['all', 'house', 'apartment', 'villa', 'penthouse'] as PropertyType[]).map((type) => {
-                const isActive = selectedType === type;
+              {(
+                ['all', 'house', 'apartment', 'villa', 'penthouse'] as PropertyType[]
+              ).map((type) => {
+                const isActive = activeType === type;
                 return (
                   <button
                     key={type}
-                    onClick={() => { setSelectedType(type); setVisibleLimit(6); }}
+                    onClick={() => handleTypeChange(type)}
                     className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium cursor-pointer ${
                       isActive
                         ? 'bg-nordic-dark text-white shadow-lg shadow-nordic-dark/10 transition-transform hover:-translate-y-0.5'
                         : 'bg-white dark:bg-white/5 border border-nordic-dark/5 text-nordic-muted hover:text-nordic-dark hover:border-mosque/50 transition-all hover:bg-mosque/5'
                     }`}
                   >
-                    {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type === 'all'
+                      ? 'All'
+                      : type.charAt(0).toUpperCase() + type.slice(1)}
                   </button>
                 );
               })}
@@ -181,28 +162,28 @@ export function HomeScreen({ initialProperties }: HomeScreenProps) {
         </section>
 
         {/* Featured Collections Section */}
-        {filteredFeatured.length > 0 && (
+        {featuredProperties.length > 0 && (
           <section className="mb-16">
             <div className="flex items-end justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-light text-nordic-dark dark:text-white">Featured Collections</h2>
-                <p className="text-nordic-muted mt-1 text-sm">Curated properties for the discerning eye.</p>
+                <h2 className="text-2xl font-light text-nordic-dark dark:text-white">
+                  Featured Collections
+                </h2>
+                <p className="text-nordic-muted mt-1 text-sm">
+                  Curated properties for the discerning eye.
+                </p>
               </div>
-              <a className="hidden sm:flex items-center gap-1 text-sm font-medium text-mosque hover:opacity-70 transition-opacity" href="#">
-                View all <span className="material-icons text-sm">arrow_forward</span>
+              <a
+                className="hidden sm:flex items-center gap-1 text-sm font-medium text-mosque hover:opacity-70 transition-opacity"
+                href="#"
+              >
+                View all{' '}
+                <span className="material-icons text-sm">arrow_forward</span>
               </a>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {filteredFeatured.slice(0, 2).map((property) => (
-                <FeaturedCard
-                  key={property.id}
-                  property={property}
-                  isFavorite={favorites.has(property.id)}
-                  onToggleFavorite={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite(property.id);
-                  }}
-                />
+              {featuredProperties.slice(0, 2).map((property) => (
+                <FeaturedCard key={property.id} property={property} />
               ))}
             </div>
           </section>
@@ -212,61 +193,59 @@ export function HomeScreen({ initialProperties }: HomeScreenProps) {
         <section>
           <div className="flex items-end justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-light text-nordic-dark dark:text-white">New in Market</h2>
-              <p className="text-nordic-muted mt-1 text-sm">Fresh opportunities added this week.</p>
+              <h2 className="text-2xl font-light text-nordic-dark dark:text-white">
+                New in Market
+              </h2>
+              <p className="text-nordic-muted mt-1 text-sm">
+                Fresh opportunities added this week.
+              </p>
             </div>
             <div className="hidden md:flex bg-white dark:bg-white/5 p-1 rounded-lg">
               {(['all', 'buy', 'rent'] as PurposeType[]).map((purpose) => {
-                const isActive = selectedPurpose === purpose;
+                const isActive = activePurpose === purpose;
                 return (
                   <button
                     key={purpose}
-                    onClick={() => { setSelectedPurpose(purpose); setVisibleLimit(6); }}
+                    onClick={() => handlePurposeChange(purpose)}
                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                       isActive
                         ? 'bg-nordic-dark text-white shadow-sm'
                         : 'text-nordic-muted hover:text-nordic-dark dark:hover:text-white'
                     }`}
                   >
-                    {purpose === 'all' ? 'All' : purpose === 'buy' ? 'Buy' : 'Rent'}
+                    {purpose === 'all'
+                      ? 'All'
+                      : purpose === 'buy'
+                        ? 'Buy'
+                        : 'Rent'}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {filteredStandard.length > 0 ? (
+          {properties.length > 0 ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredStandard.slice(0, visibleLimit).map((property, index) => (
-                  <div key={property.id} className={getResponsiveClass(index)}>
-                    <PropertyCard
-                      property={property}
-                      isFavorite={favorites.has(property.id)}
-                      onToggleFavorite={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(property.id);
-                      }}
-                    />
-                  </div>
+                {properties.map((property) => (
+                  <PropertyCard key={property.id} property={property} />
                 ))}
               </div>
 
-              {filteredStandard.length > visibleLimit && (
-                <div className="mt-12 text-center">
-                  <button
-                    onClick={handleLoadMore}
-                    className="px-8 py-3 bg-white dark:bg-white/5 border border-nordic-dark/10 dark:border-white/10 hover:border-mosque hover:text-mosque text-nordic-dark dark:text-white font-medium rounded-lg transition-all hover:shadow-md cursor-pointer"
-                  >
-                    Load more properties
-                  </button>
-                </div>
-              )}
+              {/* Server-side Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+              />
             </>
           ) : (
             <div className="text-center py-12 bg-white dark:bg-white/5 rounded-xl border border-dashed border-nordic-dark/10 dark:border-white/10">
-              <span className="material-icons text-4xl text-nordic-muted mb-2">info_outline</span>
-              <p className="text-nordic-muted">No properties found matching your criteria.</p>
+              <span className="material-icons text-4xl text-nordic-muted mb-2">
+                info_outline
+              </span>
+              <p className="text-nordic-muted">
+                No properties found matching your criteria.
+              </p>
             </div>
           )}
         </section>
