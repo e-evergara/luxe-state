@@ -43,3 +43,31 @@
 ```Text
    Vamos a crear las "Featured Collections" propiedades, necesito que tengamos una bandera en la base de datos que me permita asignar una propiedad como "Featured"   
 ```
+
+3. Authentication and Authorization
+
+```Text
+    Vamos a crear el login basado en el diseño exactamente igual al proporcionado en `docs/resources/social_login_and_registration/code.html`
+
+    - Necesitamos que si el usuario tiene avatar de google o github, entonces que se muestre en el navbar
+    - Implemente Google SignIn y Github Sign in basado en Supabase.
+```
+3.1.0 Add prompt in the implementation plan
+```Text
+    Yo proveere las configuraciones de Supabase para GitHub y Google Signin
+```
+
+3.1.1 add next.config for image
+```Text
+    Necesitamos autorizar la fuente de imágenes de GitHub para los avatar de los usuarios, de paso también añade los URLS de google
+
+    Invalid src prop (https://avatars.githubusercontent.com/u/3438503?v=4) on `next/image`, hostname "avatars.githubusercontent.com" is not configured under images in your `next.config.js`
+    See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
+```
+
+3.2 Add bottom closed session in navbar
+```Text
+  Necesito que el diseño del login, luzca igual al de la imagen proporcionada, ya que actualmente los colores no son los mismos.
+  También, necesito en el navbar una manera de cerrar sesión
+  Necesito un botón que siga el i18n para poder llamar la pantalla del login
+```

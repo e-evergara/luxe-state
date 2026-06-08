@@ -7,6 +7,7 @@ import { Navbar } from '@/components/ui/Navbar';
 import { FeaturedCard } from '@/components/ui/FeaturedCard';
 import { PropertyCard } from '@/components/ui/PropertyCard';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface HomeScreenProps {
   // Paginated standard properties
@@ -36,6 +37,7 @@ export function HomeScreen({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
 
   // -------------------------------------------------------------------------
   // URL param helpers
@@ -96,12 +98,12 @@ export function HomeScreen({
         <section className="py-12 md:py-16">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-nordic-dark dark:text-white leading-tight">
-              Find your{' '}
+              {t('home.heroTitlePrefix')}
               <span className="relative inline-block">
-                <span className="relative z-10 font-medium">sanctuary</span>
+                <span className="relative z-10 font-medium">{t('home.heroTitleHighlight')}</span>
                 <span className="absolute bottom-2 left-0 w-full h-3 bg-mosque/20 -rotate-1 z-0"></span>
               </span>
-              .
+              {t('home.heroTitleSuffix')}
             </h1>
 
             {/* Search Input Form */}
@@ -120,13 +122,13 @@ export function HomeScreen({
                 defaultValue={activeSearch}
                 key={activeSearch} /* re-mount when server updates value */
                 className="block w-full pl-12 pr-28 py-4 rounded-xl border-none bg-white dark:bg-white/5 text-nordic-dark dark:text-white shadow-soft placeholder-nordic-muted/60 focus:ring-2 focus:ring-mosque focus:bg-white dark:focus:bg-white/10 transition-all text-lg focus:outline-none"
-                placeholder="Search by city, neighborhood, or address..."
+                placeholder={t('home.searchPlaceholder')}
               />
               <button
                 type="submit"
                 className="absolute inset-y-2 right-2 px-6 bg-mosque hover:bg-mosque/90 text-white font-medium rounded-lg transition-colors flex items-center justify-center shadow-lg shadow-mosque/20 cursor-pointer"
               >
-                Search
+                {t('home.searchButton')}
               </button>
             </form>
 
@@ -146,16 +148,14 @@ export function HomeScreen({
                         : 'bg-white dark:bg-white/5 border border-nordic-dark/5 text-nordic-muted hover:text-nordic-dark hover:border-mosque/50 transition-all hover:bg-mosque/5'
                     }`}
                   >
-                    {type === 'all'
-                      ? 'All'
-                      : type.charAt(0).toUpperCase() + type.slice(1)}
+                    {t(`home.types.${type}`)}
                   </button>
                 );
               })}
 
               <div className="w-px h-6 bg-nordic-dark/10 mx-2"></div>
               <button className="whitespace-nowrap flex items-center gap-1 px-4 py-2 rounded-full text-nordic-dark dark:text-gray-300 font-medium text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer">
-                <span className="material-icons text-base">tune</span> Filters
+                <span className="material-icons text-base">tune</span> {t('home.filters')}
               </button>
             </div>
           </div>
@@ -167,17 +167,17 @@ export function HomeScreen({
             <div className="flex items-end justify-between mb-8">
               <div>
                 <h2 className="text-2xl font-light text-nordic-dark dark:text-white">
-                  Featured Collections
+                  {t('home.featuredTitle')}
                 </h2>
                 <p className="text-nordic-muted mt-1 text-sm">
-                  Curated properties for the discerning eye.
+                  {t('home.featuredSubtitle')}
                 </p>
               </div>
               <a
                 className="hidden sm:flex items-center gap-1 text-sm font-medium text-mosque hover:opacity-70 transition-opacity"
                 href="#"
               >
-                View all{' '}
+                {t('home.viewAll')}{' '}
                 <span className="material-icons text-sm">arrow_forward</span>
               </a>
             </div>
@@ -194,10 +194,10 @@ export function HomeScreen({
           <div className="flex items-end justify-between mb-8">
             <div>
               <h2 className="text-2xl font-light text-nordic-dark dark:text-white">
-                New in Market
+                {t('home.newMarketTitle')}
               </h2>
               <p className="text-nordic-muted mt-1 text-sm">
-                Fresh opportunities added this week.
+                {t('home.newMarketSubtitle')}
               </p>
             </div>
             <div className="hidden md:flex bg-white dark:bg-white/5 p-1 rounded-lg">
@@ -213,11 +213,7 @@ export function HomeScreen({
                         : 'text-nordic-muted hover:text-nordic-dark dark:hover:text-white'
                     }`}
                   >
-                    {purpose === 'all'
-                      ? 'All'
-                      : purpose === 'buy'
-                        ? 'Buy'
-                        : 'Rent'}
+                    {t(`home.purposes.${purpose}`)}
                   </button>
                 );
               })}
@@ -244,7 +240,7 @@ export function HomeScreen({
                 info_outline
               </span>
               <p className="text-nordic-muted">
-                No properties found matching your criteria.
+                {t('home.emptyState')}
               </p>
             </div>
           )}
