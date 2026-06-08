@@ -39,3 +39,7 @@
 ```Text
    En el plan crear una taba relacional ya que las imagenes pueden ser varias image y cada imagen tiene su titulo y descripcion, si un campo status para saber si la muetra o no, y la data de auditoria como quien la creo que fecha, quien la actualizo y que fecha
 ```
+3. Featured Collections
+```Text
+   Vamos a crear las "Featured Collections" propiedades, necesito que tengamos una bandera en la base de datos que me permita asignar una propiedad como "Featured"   
+```
