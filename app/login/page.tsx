@@ -11,10 +11,22 @@ export default function LoginPage() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Redirect to home if user is already logged in
+    // Redirect based on role if user is already logged in
     supabaseBrowserClient.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.replace('/');
+        const role = (session.user?.app_metadata as { role?: string } | undefined)?.role;
+        
+        let next = '/';
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          next = params.get('next') || '/';
+        }
+
+        if (role === 'admin') {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace(next);
+        }
       }
     });
   }, [router]);
@@ -22,10 +34,16 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     setIsLoading(provider);
     try {
+      let next = '/';
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        next = params.get('next') || '/';
+      }
+
       const { error } = await supabaseBrowserClient.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
       
