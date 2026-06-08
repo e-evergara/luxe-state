@@ -26,7 +26,7 @@
   agrega unos 10 propiedades mas a la lista
 ```
 
-## Batabase
+## Database
 
 1. Vamos a crear una base de datos para la aplicacion web 
 
