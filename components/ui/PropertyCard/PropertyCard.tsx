@@ -5,12 +5,11 @@ import { Property } from '@/types/property';
 
 interface PropertyCardProps {
   property: Property;
-  isFavorite: boolean;
-  onToggleFavorite: (e: React.MouseEvent) => void;
 }
 
-export function PropertyCard({ property, isFavorite, onToggleFavorite }: PropertyCardProps) {
+export function PropertyCard({ property }: PropertyCardProps) {
   const formattedPrice = property.price.toLocaleString('en-US');
+  const coverImage = property.images[0]?.url ?? '';
 
   return (
     <article className="bg-white dark:bg-white/5 rounded-xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group cursor-pointer h-full flex flex-col">
@@ -18,20 +17,10 @@ export function PropertyCard({ property, isFavorite, onToggleFavorite }: Propert
         <Image
           alt={property.title}
           className="object-cover transition-transform duration-500 group-hover:scale-110"
-          src={property.image}
+          src={coverImage}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         />
-        <button
-          onClick={onToggleFavorite}
-          className={`absolute top-3 right-3 p-2 bg-white/90 dark:bg-black/50 rounded-full hover:bg-mosque hover:text-white transition-colors cursor-pointer ${
-            isFavorite ? 'text-red-500' : 'text-nordic-dark dark:text-white'
-          }`}
-        >
-          <span className="material-icons text-lg leading-none">
-            {isFavorite ? 'favorite' : 'favorite_border'}
-          </span>
-        </button>
         <div className={`absolute bottom-3 left-3 text-white text-xs font-bold px-2 py-1 rounded ${
           property.purpose === 'buy' ? 'bg-nordic-dark/90' : 'bg-mosque/90'
         }`}>

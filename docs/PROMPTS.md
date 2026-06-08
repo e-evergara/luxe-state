@@ -25,3 +25,17 @@
 ```Text
   agrega unos 10 propiedades mas a la lista
 ```
+
+## Batabase
+
+1. Vamos a crear una base de datos para la aplicacion web 
+
+```Text
+    Vamos a crear la base de datos en supabase, por favor usa el MCP de Supabase que ya está conectado.
+    La paginación debe de ser del lado del servidor usando funciones de NextJS.
+```
+
+2. Plan de base de datos
+```Text
+   En el plan crear una taba relacional ya que las imagenes pueden ser varias image y cada imagen tiene su titulo y descripcion, si un campo status para saber si la muetra o no, y la data de auditoria como quien la creo que fecha, quien la actualizo y que fecha
+```
