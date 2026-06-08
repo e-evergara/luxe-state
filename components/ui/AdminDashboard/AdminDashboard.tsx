@@ -7,9 +7,10 @@ import { UsersTable } from './UsersTable';
 interface AdminDashboardProps {
   properties: Property[];
   userRoles: UserRoleRecord[];
+  activeTab: 'properties' | 'users';
 }
 
-export function AdminDashboard({ properties, userRoles }: AdminDashboardProps) {
+export function AdminDashboard({ properties, userRoles, activeTab }: AdminDashboardProps) {
   const totalActive = properties.filter((p) => p.status === 'active').length;
   const totalFeatured = properties.filter((p) => p.isFeatured).length;
   const totalAdmins = userRoles.filter((u) => u.role === 'admin').length;
@@ -61,15 +62,16 @@ export function AdminDashboard({ properties, userRoles }: AdminDashboardProps) {
         />
       </div>
 
-      {/* Properties Table */}
-      <div className="mb-10">
-        <PropertiesTable properties={properties} />
-      </div>
-
-      {/* Users Table */}
-      <div className="mb-10">
-        <UsersTable userRoles={userRoles} />
-      </div>
+      {/* Conditionally Render Properties or Users */}
+      {activeTab === 'properties' ? (
+        <div className="mb-10 animate-fade-in">
+          <PropertiesTable properties={properties} />
+        </div>
+      ) : (
+        <div className="mb-10 animate-fade-in">
+          <UsersTable userRoles={userRoles} />
+        </div>
+      )}
     </div>
   );
 }

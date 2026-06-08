@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { createServerClient } from '@/lib/supabase/server';
 import { AdminSidebar } from '@/components/ui/AdminDashboard/AdminSidebar';
 
@@ -38,7 +39,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#EEF6F6] dark:bg-[#0f231f] flex">
-      <AdminSidebar displayName={displayName} avatarUrl={avatarUrl} />
+      <Suspense fallback={<div className="w-64 bg-[#19322F] h-full" />}>
+        <AdminSidebar displayName={displayName} avatarUrl={avatarUrl} />
+      </Suspense>
       <main className="flex-1 ml-64 min-h-screen">
         {children}
       </main>

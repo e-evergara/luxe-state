@@ -7,11 +7,20 @@ export const metadata: Metadata = {
   description: 'Manage properties and users on LuxeEstate.',
 };
 
-export default async function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  searchParams: Promise<{
+    tab?: string;
+  }>;
+}
+
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const params = await searchParams;
+  const tab = params.tab === 'users' ? 'users' : 'properties';
+
   const [properties, userRoles] = await Promise.all([
     getAllPropertiesAdmin(),
     getAllUserRoles(),
   ]);
 
-  return <AdminDashboard properties={properties} userRoles={userRoles} />;
+  return <AdminDashboard properties={properties} userRoles={userRoles} activeTab={tab} />;
 }

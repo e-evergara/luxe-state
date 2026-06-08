@@ -1,10 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 
 interface AdminSidebarProps {
   displayName: string;
@@ -13,30 +13,50 @@ interface AdminSidebarProps {
 
 const navItems = [
   {
-    href: '/admin/dashboard',
+    href: '/admin/dashboard?tab=properties',
     icon: 'dashboard',
     label: 'Dashboard',
+    tab: 'properties',
   },
   {
-    href: '/admin/dashboard#properties',
-    icon: 'home_work',
-    label: 'Propiedades',
-  },
-  {
-    href: '/admin/dashboard#users',
+    href: '/admin/dashboard?tab=users',
     icon: 'manage_accounts',
     label: 'Usuarios',
+    tab: 'users',
   },
   {
     href: '/',
     icon: 'open_in_new',
     label: 'Ver sitio',
+    tab: 'site',
   },
 ];
 
 export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+
+  const currentTab = searchParams.get('tab') ?? 'properties';
+
+  // Dark Mode State and Toggle
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    try {
+      localStorage.setItem('theme', next ? 'dark' : 'light');
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const handleSignOut = async () => {
     await supabaseBrowserClient.auth.signOut();
@@ -44,7 +64,7 @@ export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#19322F] dark:bg-[#0a1f1c] flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.15)] z-40">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-[#19322F] dark:bg-[#0a1f1c] flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.15)] z-40 transition-colors duration-300">
       {/* Logo */}
       <div className="px-6 pt-8 pb-6 border-b border-white/10">
         <Link href="/" className="flex items-center gap-3">
@@ -53,7 +73,7 @@ export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-tight">LuxeEstate</p>
-            <p className="text-white/40 text-xs">Admin Panel</p>
+            <p className="text-white/40 text-xs font-medium uppercase tracking-wider">Admin Panel</p>
           </div>
         </Link>
       </div>
@@ -64,15 +84,18 @@ export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
           Menú
         </p>
         {navItems.map((item) => {
-          const isActive =
-            item.href === '/admin/dashboard' && pathname === '/admin/dashboard';
+          const isSite = item.tab === 'site';
+          const isActive = isSite
+            ? pathname === '/'
+            : pathname.startsWith('/admin/dashboard') && currentTab === item.tab;
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                transition-all duration-200 group
+                transition-all duration-200 group cursor-pointer
                 ${
                   isActive
                     ? 'bg-[#006655] text-white shadow-[0_4px_12px_rgba(0,102,85,0.4)]'
@@ -96,8 +119,20 @@ export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
         })}
       </nav>
 
-      {/* User profile + Sign out */}
-      <div className="px-3 pb-6 pt-4 border-t border-white/10">
+      {/* User profile + Dark Mode + Sign out */}
+      <div className="px-3 pb-6 pt-4 border-t border-white/10 mt-auto">
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white transition-all duration-200 group mb-3 cursor-pointer"
+        >
+          <span className="material-icons text-xl group-hover:scale-110 transition-transform duration-200 text-white/50 group-hover:text-white">
+            {isDark ? 'light_mode' : 'dark_mode'}
+          </span>
+          {isDark ? 'Modo claro' : 'Modo oscuro'}
+        </button>
+
+        {/* Profile */}
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 mb-3">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#006655] flex items-center justify-center flex-shrink-0">
             {avatarUrl ? (
@@ -114,12 +149,14 @@ export function AdminSidebar({ displayName, avatarUrl }: AdminSidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold truncate">{displayName}</p>
-            <p className="text-white/40 text-[10px]">Administrador</p>
+            <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Administrador</p>
           </div>
         </div>
+
+        {/* Sign out */}
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group cursor-pointer"
           id="admin-signout-btn"
         >
           <span className="material-icons text-xl group-hover:scale-110 transition-transform duration-200">
