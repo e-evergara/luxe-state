@@ -71,3 +71,54 @@
   También, necesito en el navbar una manera de cerrar sesión
   Necesito un botón que siga el i18n para poder llamar la pantalla del login
 ```
+
+4.1 Dashboard Page 
+```Text
+  Vamos a crear un dashboard administrativo que permita:
+
+  - Ver las propiedades actuales
+  - Editar roles de los usuarios autenticados en nuestra aplicación, crea una tabla en base de datos para esta labor
+  - Crea un middleware para validar el role del usuario
+  
+```
+
+4.1.1 User roles
+```Text
+  Necesito que todos los usuarios que se autentiquen en nuestra aplicación, creen un registro en la tabla de user_roles con el role por defecto.
+
+  El middleware no me está dejando entrar a la ruta /admin/dashboard aunque el usuario sea administrador 
+```
+
+4.2 Dashboard UI
+```Text
+  Necesito que las pantallas de admin/users y admin/properties tengan los diseños exactamente igual a los proporcionados.
+
+  - Pantalla de usuarios `</> code.html`
+  - Pantalla de propiedades `</> code.html`
+
+  Deben de lucir igual a esos diseños, siguiendo los lineamientos de color.
+
+
+   Necesito que las pantallas de admin/dashboard?tab=users  y /admin/dashboard?tab=properties tengan los diseños exactamente igual a los proporcionados en la seccion de Panel de control.
+
+  - Pantalla de usuarios [code.html](./docs/resources/admin_user_directory_cards/code.html) 
+  - Pantalla de propiedades [code.html](./docs/resources/property_management_dashboard/code.html) 
+
+  Deben de lucir igual a esos diseños, siguiendo los lineamientos de color.
+```
+
+4.2.1 Dashboard Properties
+
+```Text
+  Necesito que las pantallas de /admin/dashboard?tab=properties, implemente la paginacion de 10 propoerties por pagina y que traiga de 10 en 10 de la base de datos, no todas de golpe.
+```
+
+4.2.2 Dashboard details
+```Text
+   En el panel administrativo necesito:
+
+  - Que el navbar muestre la foto de perfil del usuario si es que la tiene
+  - Necesito una paginación de propiedades y de usuarios
+  - Necesito que los botones de agregar propiedad y agregar usuario sigan los mismos color y diseños
+  - Que el navbar muestre claramente cuál es la ruta activa
+```

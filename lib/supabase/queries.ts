@@ -1,5 +1,6 @@
 import { createServerClient } from './server';
 import { Property, PropertyImage, PaginatedResult } from '@/types/property';
+import { UserRole, UserRoleRecord } from '@/types/user';
 
 export const PAGE_SIZE = 8;
 
@@ -108,7 +109,7 @@ export interface GetPropertiesParams {
 export async function getProperties(
   params: GetPropertiesParams = {},
 ): Promise<PaginatedResult<Property>> {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { page = 1, type, purpose, search } = params;
 
   const from = (page - 1) * PAGE_SIZE;
@@ -176,7 +177,7 @@ export async function getProperties(
 export async function getFeaturedProperties(
   params: Pick<GetPropertiesParams, 'type' | 'search'> = {},
 ): Promise<Property[]> {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { type, search } = params;
 
   let query = supabase
@@ -204,6 +205,91 @@ export async function getFeaturedProperties(
   }
 
   const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  return (data as PropertyRow[]).map(mapProperty);
+}
+
+// ---------------------------------------------------------------------------
+// Admin-only type helpers
+// ---------------------------------------------------------------------------
+
+interface UserRoleRow {
+  user_id: string;
+  role: string;
+  created_at: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  last_sign_in_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Admin queries — use SECURITY DEFINER RPCs via the regular server client.
+// No service role key needed. The DB functions enforce the admin check.
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches all user roles joined with user metadata via a SECURITY DEFINER RPC.
+ * Only returns data if the calling user is an admin (enforced in the DB function).
+ */
+export async function getAllUserRoles(): Promise<UserRoleRecord[]> {
+  const supabase = await createServerClient();
+
+  const { data, error } = await supabase.rpc('get_all_user_roles_for_admin');
+
+  if (error) throw new Error(error.message);
+
+  return (data as UserRoleRow[]).map((row) => ({
+    userId: row.user_id,
+    role: row.role as UserRole,
+    createdAt: row.created_at,
+    email: row.email ?? undefined,
+    displayName: row.display_name ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
+    lastSignInAt: row.last_sign_in_at ?? undefined,
+  }));
+}
+
+/**
+ * Updates a user's role via a SECURITY DEFINER RPC.
+ * Only works if the calling user is an admin (enforced in the DB function).
+ */
+export async function updateUserRole(
+  userId: string,
+  role: UserRole,
+): Promise<void> {
+  const supabase = await createServerClient();
+
+  const { error } = await supabase.rpc('admin_update_user_role', {
+    p_user_id: userId,
+    p_role: role,
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fetches ALL properties (featured + non-featured) for the admin dashboard.
+ * Uses the regular server client — properties are readable with the anon key.
+ */
+export async function getAllPropertiesAdmin(): Promise<Property[]> {
+  const supabase = await createServerClient();
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select(
+      `
+      id, title, location, price, beds, baths, area, tag, type, purpose,
+      is_featured, status, created_at, created_by, updated_at, updated_by,
+      property_images (
+        id, property_id, url, title, description, sort_order,
+        status, created_at, created_by, updated_at, updated_by
+      )
+      `,
+    )
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
 
