@@ -148,3 +148,13 @@
   
   See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
 ```
+
+5.2  RLS (row level security) en Supabase
+```Text
+  Acabo de activar el RLS (row level security) en Supabase, y las grabaciones no funcionan.
+```
+
+5.3  Update Properties in Add Property Page
+```Text
+  Necesito que pongamos en el mantenimiento de propiedades, una opción para ingresar la latitud y longitud.
+```

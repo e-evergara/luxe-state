@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { updateUserRole } from '@/lib/supabase/queries';
 import { UserRole } from '@/types/user';
 
@@ -47,6 +48,7 @@ export async function savePropertyAction(
   propertyId?: string
 ): Promise<{ success: boolean; propertyId?: string; error?: string }> {
   try {
+    // 1. Verify the caller is an authenticated admin using the regular (anon) client.
     const supabase = await createServerClient();
     const {
       data: { user },
@@ -61,11 +63,15 @@ export async function savePropertyAction(
       return { success: false, error: 'Unauthorized: admin role required.' };
     }
 
+    // 2. Use the admin client (service role key) for all write operations
+    //    so they bypass RLS policies on properties and property_images.
+    const adminSupabase = createAdminClient();
+
     let savedPropertyId = propertyId;
 
     if (propertyId) {
       // Update existing property
-      const { error: propError } = await supabase
+      const { error: propError } = await adminSupabase
         .from('properties')
         .update({
           title: propertyData.title,
@@ -89,7 +95,7 @@ export async function savePropertyAction(
       // Create new property
       const randomStr = Math.random().toString(36).substring(2, 10);
       const newId = `prop-${randomStr}`;
-      const { data, error: propError } = await supabase
+      const { data, error: propError } = await adminSupabase
         .from('properties')
         .insert({
           id: newId,
@@ -113,11 +119,12 @@ export async function savePropertyAction(
       savedPropertyId = data.id;
     }
 
-    // Now handle images. For simplicity:
-    // 1. Delete all existing images for this property to avoid sync issues.
-    // 2. Insert new ones.
+    // 3. Sync images: delete existing ones then re-insert.
     if (propertyId) {
-      await supabase.from('property_images').delete().eq('property_id', propertyId);
+      await adminSupabase
+        .from('property_images')
+        .delete()
+        .eq('property_id', propertyId);
     }
 
     if (imagesData && imagesData.length > 0) {
@@ -128,8 +135,8 @@ export async function savePropertyAction(
         status: 'active',
         created_by: user.id,
       }));
-      
-      const { error: imgError } = await supabase
+
+      const { error: imgError } = await adminSupabase
         .from('property_images')
         .insert(imagesToInsert);
 
