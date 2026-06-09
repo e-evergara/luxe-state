@@ -32,6 +32,7 @@ export interface Property {
   type: 'house' | 'apartment' | 'villa' | 'penthouse';
   purpose: 'buy' | 'rent';
   isFeatured: boolean;
+  active: boolean;
   status: 'active' | 'inactive' | 'archived';
   images: PropertyImage[];
   latitude?: number;

@@ -34,6 +34,7 @@ interface PropertyRow {
   type: string;
   purpose: string;
   is_featured: boolean;
+  active: boolean;
   status: string;
   created_at: string;
   created_by: string | null;
@@ -77,6 +78,7 @@ function mapProperty(row: PropertyRow): Property {
     type: row.type as Property['type'],
     purpose: row.purpose as Property['purpose'],
     isFeatured: row.is_featured,
+    active: row.active,
     status: row.status as Property['status'],
     images: (row.property_images ?? [])
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -123,7 +125,8 @@ export async function getProperties(
   let countQuery = supabase
     .from('properties')
     .select('id', { count: 'exact', head: true })
-    .eq('is_featured', false);
+    .eq('is_featured', false)
+    .eq('active', true);
 
   // Build query for data
   let dataQuery = supabase
@@ -131,7 +134,7 @@ export async function getProperties(
     .select(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -140,6 +143,7 @@ export async function getProperties(
       `,
     )
     .eq('is_featured', false)
+    .eq('active', true)
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -190,7 +194,7 @@ export async function getFeaturedProperties(
     .select(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -199,6 +203,7 @@ export async function getFeaturedProperties(
       `,
     )
     .eq('is_featured', true)
+    .eq('active', true)
     .order('created_at', { ascending: false })
     .limit(6);
 
@@ -288,7 +293,7 @@ export async function getAllPropertiesAdmin(): Promise<Property[]> {
     .select(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -314,7 +319,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     .select(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,

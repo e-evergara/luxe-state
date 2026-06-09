@@ -163,3 +163,15 @@
 ```Text
   En la pantalla de editar y crear propiedades en el panel administrativo, vamos a mostrar el mapa de leaflet, cuando tengamos la latitud y longitud.
 ```
+
+6. Deactive Properties
+```Text
+  Vamos a implementar una funcionalidad para desactivar propiedades.
+
+  - Añade un campo 'active' de tipo booleano en la tabla de propiedades.
+  - Por defecto, el valor debe ser true (activado).
+  - En el panel administrativo, en la lista de propiedades, necesito un switch o botón para activar/desactivar cada propiedad.
+  - Debe seguir los mismos lineamientos de diseño y colores que los demás elementos del dashboard.
+  - Cuando una propiedad está desactivada, no debe mostrarse en la página principal de la aplicación (HomeScreen).
+  - Cuando una propiedad está desactivada, debe de aparecer en el panel administrativo para futuras actualizaciones.
+```

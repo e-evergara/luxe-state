@@ -19,6 +19,7 @@ export interface SavePropertyInput {
   baths: number;
   tag?: string | null;
   isFeatured: boolean;
+  active: boolean;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -101,6 +102,7 @@ export async function savePropertyAction(
           type: propertyData.type,
           purpose: propertyData.purpose,
           is_featured: propertyData.isFeatured,
+          active: propertyData.active,
           status: propertyData.status,
           latitude: propertyData.latitude,
           longitude: propertyData.longitude,
@@ -128,6 +130,7 @@ export async function savePropertyAction(
           type: propertyData.type,
           purpose: propertyData.purpose,
           is_featured: propertyData.isFeatured,
+          active: propertyData.active,
           status: propertyData.status,
           latitude: propertyData.latitude,
           longitude: propertyData.longitude,
@@ -171,6 +174,53 @@ export async function savePropertyAction(
     return { success: true, propertyId: savedPropertyId };
   } catch (err: unknown) {
     console.error('Error saving property:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action to toggle the `active` field of a property.
+ * Updates only the active column for efficiency.
+ */
+export async function togglePropertyActiveAction(
+  propertyId: string,
+  active: boolean,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const callerRole = (user.app_metadata as { role?: string } | undefined)?.role;
+    if (callerRole !== 'admin') {
+      return { success: false, error: 'Unauthorized: admin role required.' };
+    }
+
+    const adminSupabase = createAdminClient();
+
+    const { error } = await adminSupabase
+      .from('properties')
+      .update({
+        active,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', propertyId);
+
+    if (error) throw error;
+
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/');
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('Error toggling property active state:', err);
     const message = err instanceof Error ? err.message : String(err);
     return { success: false, error: message };
   }

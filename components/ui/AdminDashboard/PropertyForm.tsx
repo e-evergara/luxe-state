@@ -32,6 +32,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const [baths, setBaths] = useState(property?.baths || 0);
   const [tag, setTag] = useState(property?.tag || '');
   const [isFeatured, setIsFeatured] = useState(property?.isFeatured || false);
+  const [active, setActive] = useState(property?.active ?? true);
   const [latitude, setLatitude] = useState(property?.latitude?.toString() || '');
   const [longitude, setLongitude] = useState(property?.longitude?.toString() || '');
 
@@ -86,6 +87,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
         baths,
         tag,
         isFeatured,
+        active,
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
       };
@@ -224,6 +226,24 @@ export function PropertyForm({ property }: PropertyFormProps) {
                   className="w-4 h-4 text-[#006655] border-gray-300 rounded focus:ring-[#006655]" 
                 />
                 <span className="text-sm font-medium text-[#19322F] font-sf-pro transition-colors">Is Featured?</span>
+              </label>
+              <label className="flex items-center gap-2.5 cursor-pointer group mt-6">
+                <button
+                  type="button"
+                  onClick={() => setActive((prev) => !prev)}
+                  title={active ? 'Desactivar propiedad' : 'Activar propiedad'}
+                  aria-label={active ? 'Desactivar propiedad' : 'Activar propiedad'}
+                  aria-pressed={active}
+                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#006655]"
+                  style={{ backgroundColor: active ? '#006655' : '#D1D5DB' }}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                      active ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-[#19322F] font-sf-pro transition-colors">Visible (Active)</span>
               </label>
             </div>
           </div>
