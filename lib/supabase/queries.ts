@@ -295,3 +295,32 @@ export async function getAllPropertiesAdmin(): Promise<Property[]> {
 
   return (data as PropertyRow[]).map(mapProperty);
 }
+
+/**
+ * Fetches a single property by ID, including its images.
+ */
+export async function getPropertyById(id: string): Promise<Property | null> {
+  const supabase = await createServerClient();
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select(
+      `
+      id, title, location, price, beds, baths, area, tag, type, purpose,
+      is_featured, status, created_at, created_by, updated_at, updated_by,
+      property_images (
+        id, property_id, url, title, description, sort_order,
+        status, created_at, created_by, updated_at, updated_by
+      )
+      `,
+    )
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    throw new Error(error.message);
+  }
+
+  return mapProperty(data as PropertyRow);
+}

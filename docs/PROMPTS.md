@@ -122,3 +122,29 @@
   - Necesito que los botones de agregar propiedad y agregar usuario sigan los mismos color y diseños
   - Que el navbar muestre claramente cuál es la ruta activa
 ```
+
+5.1 Create Add Property Page
+
+```Text
+  Vamos a preparar la pantalla para editar y crear propiedades nuevas.
+
+  - Siga el diseño exactamente igual a @docs/resources/add_edit_property_form/code.html ya que cuenta con las clases y estructura necesaria
+  - Si faltan campos en el formulario añadelos acorde
+  - Sino le subimos una imagen ponle una por defecto de acorde al diseño
+  - Añade una navegación entre la página de properties en el panel administrativo hacia la nueva página de creación o edición cuando sea necesario.
+  - Vamos a usar un bucket en Supabase para la carga de imágenes y actualizarlas.
+```
+
+5.1.1 Add Property Runtime Error
+
+```Text
+  Necesito que configures este path en next.config para que las imágenes se puedan ver
+
+  Runtime Error
+
+  Invalid src prop
+  (https://sjlojbdoihgappqtmads.supabase.co/storage/v1/object/public/property_images/properties/50pqpjszhut_1771877372446.jpg) 
+  on `next/image`, hostname "sjlojbdoihgappqtmads.supabase.co" is not configured under images in your `next.config.js`
+  
+  See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
+```
