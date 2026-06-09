@@ -109,7 +109,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <>
+      <form id="property-form" onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start pb-24">
       <div className="xl:col-span-8 space-y-8">
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm font-medium">
@@ -419,25 +420,43 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 </div>
               </div>
             </div>
-            
-            <hr className="border-gray-100" />
-            
-            <div className="flex gap-3">
-              <Link href="/admin/dashboard?tab=properties" className="flex-1 py-3 text-center rounded-lg border border-gray-300 bg-white text-[#19322F] font-medium font-sf-pro hover:bg-gray-50 transition-colors text-sm">
-                Cancel
-              </Link>
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="flex-1 py-3 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-colors text-white font-medium font-sf-pro flex justify-center items-center gap-2 text-sm disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save Property'}
-                {!loading && <span className="material-icons text-sm">save</span>}
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </form>
+
+      {/* Sticky Footer — always visible at bottom */}
+      <div className="sticky bottom-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 -mb-10 mt-8 px-4 sm:px-6 lg:px-8 bg-white/90 dark:bg-[#19322F]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#006655]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+        <div className="py-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-3 h-3 rounded-full bg-[#006655] animate-pulse" />
+                Guardando cambios...
+              </span>
+            ) : (
+              <span>Los cambios no guardados se perderán al salir.</span>
+            )}
+          </p>
+          <div className="flex gap-3 ml-auto">
+            <Link
+              href="/admin/dashboard?tab=properties"
+              className="px-6 py-2.5 rounded-lg border border-gray-300 dark:border-[#006655]/40 bg-white dark:bg-transparent text-[#19322F] dark:text-gray-300 font-medium font-sf-pro hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm"
+            >
+              Cancel
+            </Link>
+            <button
+              form="property-form"
+              type="submit"
+              disabled={loading}
+              className="px-8 py-2.5 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-all text-white font-medium font-sf-pro flex items-center gap-2 text-sm disabled:opacity-50 shadow-md shadow-[#006655]/20 hover:shadow-lg hover:-translate-y-0.5"
+            >
+              {loading ? 'Saving...' : 'Save Property'}
+              {!loading && <span className="material-icons text-sm">save</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
