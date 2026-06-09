@@ -88,3 +88,21 @@
 
   El middleware no me está dejando entrar a la ruta /admin/dashboard aunque el usuario sea administrador 
 ```
+
+4.2 Dashboard UI
+```Text
+  Necesito que las pantallas de admin/users y admin/properties tengan los diseños exactamente igual a los proporcionados.
+
+  - Pantalla de usuarios `</> code.html`
+  - Pantalla de propiedades `</> code.html`
+
+  Deben de lucir igual a esos diseños, siguiendo los lineamientos de color.
+
+
+   Necesito que las pantallas de admin/dashboard?tab=users  y /admin/dashboard?tab=properties tengan los diseños exactamente igual a los proporcionados en la seccion de Panel de control.
+
+  - Pantalla de usuarios [code.html](./docs/resources/admin_user_directory_cards/code.html) 
+  - Pantalla de propiedades [code.html](./docs/resources/property_management_dashboard/code.html) 
+
+  Deben de lucir igual a esos diseños, siguiendo los lineamientos de color.
+```

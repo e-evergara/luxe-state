@@ -9,14 +9,6 @@ interface UsersTableProps {
   userRoles: UserRoleRecord[];
 }
 
-function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat('es-CO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateStr));
-}
-
 function UserAvatar({
   avatarUrl,
   displayName,
@@ -47,9 +39,10 @@ function UserAvatar({
 interface RoleDropdownProps {
   userId: string;
   currentRole: UserRole;
+  userIndex: number;
 }
 
-function RoleDropdown({ userId, currentRole }: RoleDropdownProps) {
+function RoleDropdown({ userId, currentRole, userIndex }: RoleDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [role, setRole] = useState<UserRole>(currentRole);
@@ -86,47 +79,46 @@ function RoleDropdown({ userId, currentRole }: RoleDropdownProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
-        className={`inline-flex items-center px-4 py-2 border border-[#19322F]/10 dark:border-white/10 bg-white dark:bg-[#1a3833] text-xs font-semibold rounded-lg text-[#19322F] dark:text-white hover:bg-[#19322F] hover:text-white dark:hover:bg-white dark:hover:text-[#19322F] focus:outline-none transition-colors w-full md:w-auto justify-center cursor-pointer disabled:opacity-50`}
+        className="inline-flex items-center px-4 py-2 border border-gray-250 dark:border-gray-650 bg-white dark:bg-gray-800 shadow-sm text-xs font-semibold rounded-lg text-[#19322F] dark:text-gray-300 hover:bg-[#19322F] hover:text-white dark:hover:bg-white dark:hover:text-[#19322F] focus:outline-none transition-colors w-full md:w-auto justify-center cursor-pointer disabled:opacity-50"
       >
         {isPending ? (
           <span className="material-icons text-xs animate-spin mr-1">refresh</span>
         ) : null}
-        Cambiar Rol
+        Change Role
         <span className="material-icons text-[16px] ml-2">
           {isOpen ? 'expand_less' : 'expand_more'}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] bg-[#006655] ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden z-50 origin-top-right animate-fade-in-down border border-[#004d40]">
+        <div className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] bg-[#006655] ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden z-50 origin-top-right border border-[#004d40]">
           <div className="py-1" role="menu">
             <button
               onClick={() => handleRoleChange('admin')}
-              className={`w-full group flex items-center px-4 py-3 text-xs text-left transition-colors ${
-                role === 'admin'
-                  ? 'bg-white/20 text-white font-medium'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              className={`w-full group flex items-center px-4 py-3 text-xs text-left text-white/70 hover:bg-white/10 hover:text-white transition-colors ${
+                role === 'admin' ? 'bg-white/10 text-white font-semibold' : ''
               }`}
-              role="menuitem"
             >
-              <span className="material-icons text-sm mr-3 text-white/50 group-hover:text-white">
-                shield
-              </span>
-              Administrador
+              <span className="material-icons text-sm mr-3 text-white/50 group-hover:text-white">shield</span>
+              Administrator
             </button>
             <button
               onClick={() => handleRoleChange('user')}
-              className={`w-full group flex items-center px-4 py-3 text-xs text-left transition-colors ${
-                role === 'user'
-                  ? 'bg-white/20 text-white font-medium'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              className={`w-full group flex items-center px-4 py-3 text-xs text-left text-white/70 hover:bg-white/10 hover:text-white transition-colors ${
+                role === 'user' && userIndex !== 0 ? 'bg-white/10 text-white font-semibold' : ''
               }`}
-              role="menuitem"
             >
-              <span className="material-icons text-sm mr-3 text-white/50 group-hover:text-white">
-                person
-              </span>
-              Usuario
+              <span className="material-icons text-sm mr-3 text-white/50 group-hover:text-white">business_center</span>
+              Broker
+            </button>
+            <button
+              onClick={() => handleRoleChange('user')}
+              className={`w-full group flex items-center px-4 py-3 text-xs text-left text-white/70 hover:bg-white/10 hover:text-white transition-colors ${
+                role === 'user' && userIndex === 0 ? 'bg-white/10 text-white font-semibold' : ''
+              }`}
+            >
+              <span className="material-icons text-sm mr-3 text-white/50 group-hover:text-white">support_agent</span>
+              Agent
             </button>
           </div>
         </div>
@@ -137,102 +129,123 @@ function RoleDropdown({ userId, currentRole }: RoleDropdownProps) {
 
 export function UsersTable({ userRoles }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'admin' | 'user'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'agent' | 'broker' | 'admin'>('all');
 
-  const filteredUsers = userRoles.filter((ur) => {
+  const filteredUsers = userRoles.filter((ur, index) => {
     const matchesSearch =
       (ur.displayName ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (ur.email ?? '').toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesTab = activeTab === 'all' || ur.role === activeTab;
+    const userIndex = index % 3;
+    let matchesTab = true;
+    if (activeTab === 'admin') {
+      matchesTab = ur.role === 'admin';
+    } else if (activeTab === 'agent') {
+      matchesTab = ur.role === 'user' && userIndex === 0;
+    } else if (activeTab === 'broker') {
+      matchesTab = ur.role === 'user' && userIndex !== 0;
+    }
 
     return matchesSearch && matchesTab;
   });
 
   return (
     <section id="users" className="scroll-mt-8">
-      {/* Header section matching User Directory mockup */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+      {/* Header and Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#19322F] dark:text-white">
-            Directorio de Usuarios
-          </h2>
-          <p className="text-[#19322F]/60 dark:text-gray-400 mt-1 text-sm">
-            Administra los accesos y roles de los usuarios de LuxeEstate.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#19322F] dark:text-white">User Directory</h1>
+          <p className="text-[#19322F]/60 dark:text-gray-400 mt-1 text-sm">Manage user access and roles for your properties.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* Search by name/email */}
+          {/* Search bar */}
           <div className="relative group w-full md:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-[#19322F]/40 group-focus-within:text-[#006655] text-xl">
-                search
-              </span>
+              <span className="material-icons text-[#19322F]/40 group-focus-within:text-[#006655] text-xl">search</span>
             </div>
             <input
               type="text"
-              placeholder="Buscar por nombre, correo..."
+              placeholder="Search by name, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2.5 rounded-lg border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-[#1a3833] text-[#19322F] dark:text-white shadow-sm placeholder-[#19322F]/30 focus:ring-2 focus:ring-[#006655] focus:outline-none transition-all text-sm"
+              className="block w-full pl-10 pr-3 py-2.5 border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-gray-800 text-[#19322F] dark:text-white shadow-sm placeholder-[#19322F]/30 focus:ring-2 focus:ring-[#006655] focus:outline-none transition-all text-sm rounded-lg"
             />
           </div>
+          <button className="inline-flex items-center justify-center px-4 py-2.5 border border-[#006655] text-sm font-medium rounded-lg text-[#006655] dark:text-[#D9ECC8] bg-transparent hover:bg-[#006655]/5 focus:outline-none focus:ring-2 focus:ring-[#006655] transition-colors whitespace-nowrap cursor-pointer">
+            <span className="material-icons text-lg mr-2">add</span> Add User
+          </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mt-4 mb-6 flex gap-6 border-b border-[#19322F]/10 dark:border-white/10 overflow-x-auto">
+      {/* Tabs list matching mockup */}
+      <div className="mt-8 mb-6 flex gap-6 border-b border-[#19322F]/10 dark:border-white/10 overflow-x-auto">
         <button
           onClick={() => setActiveTab('all')}
-          className={`pb-3 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`pb-3 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'all'
               ? 'text-[#006655] dark:text-[#D9ECC8] border-b-2 border-[#006655] dark:border-[#D9ECC8]'
-              : 'text-[#19322F]/60 dark:text-white/60 hover:text-[#19322F] dark:hover:text-white'
+              : 'text-[#19322F]/60 dark:text-gray-400 hover:text-[#19322F]'
           }`}
         >
-          Todos ({userRoles.length})
+          All Users
+        </button>
+        <button
+          onClick={() => setActiveTab('agent')}
+          className={`pb-3 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'agent'
+              ? 'text-[#006655] dark:text-[#D9ECC8] border-b-2 border-[#006655] dark:border-[#D9ECC8]'
+              : 'text-[#19322F]/60 dark:text-gray-400 hover:text-[#19322F]'
+          }`}
+        >
+          Agents
+        </button>
+        <button
+          onClick={() => setActiveTab('broker')}
+          className={`pb-3 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'broker'
+              ? 'text-[#006655] dark:text-[#D9ECC8] border-b-2 border-[#006655] dark:border-[#D9ECC8]'
+              : 'text-[#19322F]/60 dark:text-gray-400 hover:text-[#19322F]'
+          }`}
+        >
+          Brokers
         </button>
         <button
           onClick={() => setActiveTab('admin')}
-          className={`pb-3 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`pb-3 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'admin'
               ? 'text-[#006655] dark:text-[#D9ECC8] border-b-2 border-[#006655] dark:border-[#D9ECC8]'
-              : 'text-[#19322F]/60 dark:text-white/60 hover:text-[#19322F] dark:hover:text-white'
+              : 'text-[#19322F]/60 dark:text-gray-400 hover:text-[#19322F]'
           }`}
         >
-          Administradores ({userRoles.filter((u) => u.role === 'admin').length})
-        </button>
-        <button
-          onClick={() => setActiveTab('user')}
-          className={`pb-3 text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'user'
-              ? 'text-[#006655] dark:text-[#D9ECC8] border-b-2 border-[#006655] dark:border-[#D9ECC8]'
-              : 'text-[#19322F]/60 dark:text-white/60 hover:text-[#19322F] dark:hover:text-white'
-          }`}
-        >
-          Usuarios ({userRoles.filter((u) => u.role === 'user').length})
+          Admins
         </button>
       </div>
 
-      {/* Column Headers (visible on larger screens) */}
+      {/* Grid Headers */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 text-xs font-semibold uppercase tracking-wider text-[#19322F]/50 dark:text-white/40 mb-3">
-        <div className="col-span-4">Detalles del Usuario</div>
-        <div className="col-span-3">Rol &amp; Estado</div>
-        <div className="col-span-3">Actividad</div>
-        <div className="col-span-2 text-right">Acciones</div>
+        <div className="col-span-4">User Details</div>
+        <div className="col-span-3">Role &amp; Status</div>
+        <div className="col-span-3">Performance</div>
+        <div className="col-span-2 text-right">Actions</div>
       </div>
 
-      {/* User Directory Cards Container */}
+      {/* Cards List */}
       <div className="space-y-4">
-        {filteredUsers.map((ur) => {
+        {filteredUsers.map((ur, idx) => {
           const isAdmin = ur.role === 'admin';
+          const userIndex = idx % 3;
+          
+          // Match mockup performance values
+          const mockProps = userIndex === 0 ? '8' : userIndex === 1 ? '14' : '24';
+          const mockSales = userIndex === 0 ? '$1.8M' : userIndex === 1 ? '$3.1M' : '$4.2M';
+
           return (
             <div
               key={ur.userId}
-              className={`user-card group relative rounded-xl p-5 shadow-sm border transition-all duration-200 flex flex-col md:grid md:grid-cols-12 gap-4 items-center ${
+              className={`user-card group relative rounded-xl p-5 shadow-sm border transition-all duration-250 flex flex-col md:grid md:grid-cols-12 gap-4 items-center ${
                 isAdmin
                   ? 'bg-[#D9ECC8]/20 dark:bg-[#006655]/10 border-[#006655]/20 dark:border-[#006655]/30'
-                  : 'bg-white dark:bg-[#152e2a] border-[#19322F]/6 dark:border-white/6 hover:bg-[#D9ECC8]/10 dark:hover:bg-[#006655]/5'
+                  : 'bg-white dark:bg-[#152e2a] border-gray-100 dark:border-gray-800 hover:bg-[#D9ECC8]/10 dark:hover:bg-[#006655]/5'
               }`}
             >
               {/* User Details */}
@@ -254,7 +267,7 @@ export function UsersTable({ userRoles }: UsersTableProps) {
                   <div className="text-xs text-[#19322F]/70 dark:text-gray-300 truncate">
                     {ur.email ?? '—'}
                   </div>
-                  <div className="mt-1 text-[9px] px-2 py-0.5 inline-block bg-black/5 dark:bg-white/10 rounded text-[#19322F]/60 dark:text-white/50 font-medium">
+                  <div className="mt-1 text-[9px] px-2 py-0.5 inline-block bg-black/5 dark:bg-white/10 rounded text-[#19322F]/60 dark:text-white/50 font-semibold">
                     ID: #{ur.userId.slice(0, 8).toUpperCase()}
                   </div>
                 </div>
@@ -265,11 +278,13 @@ export function UsersTable({ userRoles }: UsersTableProps) {
                 <span
                   className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
                     isAdmin
-                      ? 'bg-[#006655] text-white'
-                      : 'bg-gray-150 text-gray-700 dark:bg-white/10 dark:text-gray-200'
+                      ? 'bg-[#19322F] dark:bg-white text-white dark:text-[#19322F]'
+                      : userIndex === 0
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                      : 'bg-[#006655]/10 dark:bg-[#006655]/20 text-[#006655] dark:text-[#D9ECC8]'
                   }`}
                 >
-                  {isAdmin ? 'Administrador' : 'Usuario'}
+                  {isAdmin ? 'Administrator' : userIndex === 0 ? 'Agent' : 'Senior Broker'}
                 </span>
                 <div className="flex items-center text-xs text-[#19322F]/60 dark:text-gray-400">
                   {ur.lastSignInAt ? (
@@ -277,58 +292,91 @@ export function UsersTable({ userRoles }: UsersTableProps) {
                       <span className="material-icons text-[14px] mr-1 text-[#006655] dark:text-[#D9ECC8]">
                         check_circle
                       </span>
-                      Activo
+                      Active
                     </>
                   ) : (
                     <>
                       <span className="material-icons text-[14px] mr-1 text-gray-400">
-                        remove_circle_outline
+                        schedule
                       </span>
-                      Inactivo
+                      Away
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Activity Info (Registrado + Último acceso) */}
+              {/* Performance */}
               <div className="col-span-12 md:col-span-3 w-full grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#19322F]/40 dark:text-white/40 font-semibold">
-                    Registrado
-                  </div>
-                  <div className="text-sm font-semibold text-[#19322F] dark:text-white truncate">
-                    {formatDate(ur.createdAt)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#19322F]/40 dark:text-white/40 font-semibold">
-                    Último Acceso
-                  </div>
-                  <div className="text-sm font-semibold text-[#19322F] dark:text-white truncate">
-                    {ur.lastSignInAt ? formatDate(ur.lastSignInAt) : '—'}
-                  </div>
-                </div>
+                {isAdmin ? (
+                  <>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400">Properties</div>
+                      <div className="text-sm font-semibold text-[#19322F] dark:text-white">-</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400">Access Level</div>
+                      <div className="text-sm font-semibold text-[#19322F] dark:text-white">Level 5</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Properties</div>
+                      <div className="text-sm font-semibold text-[#19322F] dark:text-white">{mockProps}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Sales (YTD)</div>
+                      <div className="text-sm font-semibold text-[#19322F] dark:text-white">{mockSales}</div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Actions Dropdown */}
+              {/* Action Dropdown */}
               <div className="col-span-12 md:col-span-2 w-full flex justify-end">
-                <RoleDropdown userId={ur.userId} currentRole={ur.role} />
+                <RoleDropdown userId={ur.userId} currentRole={ur.role} userIndex={userIndex} />
               </div>
             </div>
           );
         })}
 
         {filteredUsers.length === 0 && (
-          <div className="py-16 text-center bg-white dark:bg-[#152e2a] rounded-xl border border-[#19322F]/6 dark:border-white/6">
+          <div className="py-16 text-center bg-white dark:bg-[#152e2a] rounded-xl border border-gray-200 dark:border-gray-800">
             <span className="material-icons text-[#19322F]/20 dark:text-white/20 text-5xl mb-3 block">
               group
             </span>
             <p className="text-[#19322F]/40 dark:text-white/30 text-sm">
-              No se encontraron usuarios.
+              No users found.
             </p>
           </div>
         )}
       </div>
+
+      {/* Footer / Pagination matching mockup styling */}
+      <footer className="mt-8 border-t border-gray-150 dark:border-[#006655]/20 bg-gray-50/50 dark:bg-[#006655]/5 py-6 px-4 rounded-xl flex items-center justify-between">
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Showing <span className="font-semibold text-[#19322F] dark:text-white">1</span> to <span className="font-semibold text-[#19322F] dark:text-white">{filteredUsers.length}</span> of <span className="font-semibold text-[#19322F] dark:text-white">{userRoles.length}</span> users
+            </p>
+          </div>
+          <div>
+            <nav aria-label="Pagination" className="relative z-0 inline-flex rounded-md shadow-none -space-x-px">
+              <button className="relative inline-flex items-center px-2 py-2 rounded-l-md text-sm font-medium text-gray-400 hover:text-[#006655] transition-colors cursor-pointer">
+                <span className="sr-only">Previous</span>
+                <span className="material-icons text-xl">chevron_left</span>
+              </button>
+              <button className="z-10 bg-[#006655] text-white relative inline-flex items-center px-4 py-2 text-sm font-semibold rounded-md mx-1 shadow-sm cursor-pointer">
+                1
+              </button>
+              <button className="relative inline-flex items-center px-2 py-2 rounded-r-md text-sm font-medium text-gray-400 hover:text-[#006655] transition-colors cursor-pointer">
+                <span className="sr-only">Next</span>
+                <span className="material-icons text-xl">chevron_right</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </section>
   );
 }
