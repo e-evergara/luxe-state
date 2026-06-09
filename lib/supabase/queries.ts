@@ -39,6 +39,8 @@ interface PropertyRow {
   created_by: string | null;
   updated_at: string;
   updated_by: string | null;
+  latitude: number | null;
+  longitude: number | null;
   property_images: PropertyImageRow[];
 }
 
@@ -79,6 +81,8 @@ function mapProperty(row: PropertyRow): Property {
     images: (row.property_images ?? [])
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(mapImage),
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
     createdAt: row.created_at,
     createdBy: row.created_by ?? undefined,
     updatedAt: row.updated_at,
@@ -128,6 +132,7 @@ export async function getProperties(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
       is_featured, status, created_at, created_by, updated_at, updated_by,
+      latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
         status, created_at, created_by, updated_at, updated_by
@@ -186,6 +191,7 @@ export async function getFeaturedProperties(
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
       is_featured, status, created_at, created_by, updated_at, updated_by,
+      latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
         status, created_at, created_by, updated_at, updated_by
@@ -283,6 +289,7 @@ export async function getAllPropertiesAdmin(): Promise<Property[]> {
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
       is_featured, status, created_at, created_by, updated_at, updated_by,
+      latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
         status, created_at, created_by, updated_at, updated_by
@@ -308,6 +315,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
       `
       id, title, location, price, beds, baths, area, tag, type, purpose,
       is_featured, status, created_at, created_by, updated_at, updated_by,
+      latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
         status, created_at, created_by, updated_at, updated_by

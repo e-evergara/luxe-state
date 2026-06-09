@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Property, PropertyImage } from '@/types/property';
+import dynamic from 'next/dynamic';
+import { Property } from '@/types/property';
 import { uploadPropertyImage } from '@/lib/supabase/storage';
 import { savePropertyAction } from '@/app/admin/actions';
+
+const PropertyMap = dynamic(() => import('./Map'), { ssr: false });
 
 interface PropertyFormProps {
   property?: Property | null;
@@ -29,6 +32,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const [baths, setBaths] = useState(property?.baths || 0);
   const [tag, setTag] = useState(property?.tag || '');
   const [isFeatured, setIsFeatured] = useState(property?.isFeatured || false);
+  const [latitude, setLatitude] = useState(property?.latitude?.toString() || '');
+  const [longitude, setLongitude] = useState(property?.longitude?.toString() || '');
 
   // We keep a mix of existing image URLs and new File objects
   // For simplicity, we just store { url: string, file?: File }
@@ -81,6 +86,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
         baths,
         tag,
         isFeatured,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
       };
 
       // 3. Save via Server Action
@@ -92,8 +99,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
       router.push('/admin/dashboard?tab=properties');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -157,7 +164,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 <select 
                   id="status" 
                   value={status}
-                  onChange={e => setStatus(e.target.value as any)}
+                  onChange={e => setStatus(e.target.value as Property['status'])}
                   className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
                 >
                   <option value="active">Active</option>
@@ -171,7 +178,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 <select 
                   id="type" 
                   value={type}
-                  onChange={e => setType(e.target.value as any)}
+                  onChange={e => setType(e.target.value as Property['type'])}
                   className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
                 >
                   <option value="apartment">Apartment</option>
@@ -186,7 +193,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 <select 
                   id="purpose" 
                   value={purpose}
-                  onChange={e => setPurpose(e.target.value as any)}
+                  onChange={e => setPurpose(e.target.value as Property['purpose'])}
                   className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
                 >
                   <option value="buy">For Sale</option>
@@ -306,6 +313,42 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="latitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Latitude</label>
+                <input 
+                  id="latitude" 
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={e => setLatitude(e.target.value)}
+                  placeholder="e.g. 19.4326" 
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
+                />
+              </div>
+              <div>
+                <label htmlFor="longitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Longitude</label>
+                <input 
+                  id="longitude" 
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={e => setLongitude(e.target.value)}
+                  placeholder="e.g. -99.1332" 
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
+                />
+              </div>
+            </div>
+            {latitude !== '' && longitude !== '' && !isNaN(Number(latitude)) && !isNaN(Number(longitude)) && (
+              <PropertyMap 
+                latitude={Number(latitude)}
+                longitude={Number(longitude)}
+                onChange={(lat, lng) => {
+                  setLatitude(lat.toString());
+                  setLongitude(lng.toString());
+                }}
+              />
+            )}
           </div>
         </div>
 

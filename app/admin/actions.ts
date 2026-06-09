@@ -5,6 +5,23 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { updateUserRole } from '@/lib/supabase/queries';
 import { UserRole } from '@/types/user';
+import { Property } from '@/types/property';
+
+export interface SavePropertyInput {
+  title: string;
+  price: number;
+  status: Property['status'];
+  type: Property['type'];
+  purpose: Property['purpose'];
+  location: string;
+  area: number;
+  beds: number;
+  baths: number;
+  tag?: string | null;
+  isFeatured: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+}
 
 /**
  * Server Action to update a user's role.
@@ -43,8 +60,8 @@ export async function updateUserRoleAction(
 }
 
 export async function savePropertyAction(
-  propertyData: any,
-  imagesData: any[],
+  propertyData: SavePropertyInput,
+  imagesData: { url: string }[],
   propertyId?: string
 ): Promise<{ success: boolean; propertyId?: string; error?: string }> {
   try {
@@ -85,6 +102,8 @@ export async function savePropertyAction(
           purpose: propertyData.purpose,
           is_featured: propertyData.isFeatured,
           status: propertyData.status,
+          latitude: propertyData.latitude,
+          longitude: propertyData.longitude,
           updated_by: user.id,
           updated_at: new Date().toISOString(),
         })
@@ -110,6 +129,8 @@ export async function savePropertyAction(
           purpose: propertyData.purpose,
           is_featured: propertyData.isFeatured,
           status: propertyData.status,
+          latitude: propertyData.latitude,
+          longitude: propertyData.longitude,
           created_by: user.id,
         })
         .select()
@@ -148,9 +169,9 @@ export async function savePropertyAction(
     revalidatePath(`/admin/properties/${savedPropertyId}`);
 
     return { success: true, propertyId: savedPropertyId };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving property:', err);
-    const message = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
+    const message = err instanceof Error ? err.message : String(err);
     return { success: false, error: message };
   }
 }

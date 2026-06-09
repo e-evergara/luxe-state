@@ -158,3 +158,8 @@
 ```Text
   Necesito que pongamos en el mantenimiento de propiedades, una opción para ingresar la latitud y longitud.
 ```
+
+5.3.1 Show map in Add Property Page
+```Text
+  En la pantalla de editar y crear propiedades en el panel administrativo, vamos a mostrar el mapa de leaflet, cuando tengamos la latitud y longitud.
+```
