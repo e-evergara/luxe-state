@@ -14,6 +14,8 @@ export interface SavePropertyInput {
   type: Property['type'];
   purpose: Property['purpose'];
   location: string;
+  city?: string | null;
+  zipCode?: string | null;
   area: number;
   beds: number;
   baths: number;
@@ -94,6 +96,8 @@ export async function savePropertyAction(
         .update({
           title: propertyData.title,
           location: propertyData.location,
+          city: propertyData.city ?? null,
+          zip_code: propertyData.zipCode ?? null,
           price: propertyData.price,
           beds: propertyData.beds,
           baths: propertyData.baths,
@@ -122,6 +126,8 @@ export async function savePropertyAction(
           id: newId,
           title: propertyData.title,
           location: propertyData.location,
+          city: propertyData.city ?? null,
+          zip_code: propertyData.zipCode ?? null,
           price: propertyData.price,
           beds: propertyData.beds,
           baths: propertyData.baths,

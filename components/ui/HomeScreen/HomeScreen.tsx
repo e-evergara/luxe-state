@@ -7,6 +7,7 @@ import { Navbar } from '@/components/ui/Navbar';
 import { FeaturedCard } from '@/components/ui/FeaturedCard';
 import { PropertyCard } from '@/components/ui/PropertyCard';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
+import { SmartSearch } from '@/components/ui/SmartSearch';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface HomeScreenProps {
@@ -74,13 +75,6 @@ export function HomeScreen({
     router.push(buildUrl({ purpose: tab }));
   };
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const search = (fd.get('search') as string) ?? '';
-    router.push(buildUrl({ search }));
-  };
-
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
@@ -106,31 +100,8 @@ export function HomeScreen({
               {t('home.heroTitleSuffix')}
             </h1>
 
-            {/* Search Input Form */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative group max-w-2xl mx-auto"
-            >
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-icons text-nordic-muted text-2xl group-focus-within:text-mosque transition-colors">
-                  search
-                </span>
-              </div>
-              <input
-                type="text"
-                name="search"
-                defaultValue={activeSearch}
-                key={activeSearch} /* re-mount when server updates value */
-                className="block w-full pl-12 pr-28 py-4 rounded-xl border-none bg-white dark:bg-white/5 text-nordic-dark dark:text-white shadow-soft placeholder-nordic-muted/60 focus:ring-2 focus:ring-mosque focus:bg-white dark:focus:bg-white/10 transition-all text-lg focus:outline-none"
-                placeholder={t('home.searchPlaceholder')}
-              />
-              <button
-                type="submit"
-                className="absolute inset-y-2 right-2 px-6 bg-mosque hover:bg-mosque/90 text-white font-medium rounded-lg transition-colors flex items-center justify-center shadow-lg shadow-mosque/20 cursor-pointer"
-              >
-                {t('home.searchButton')}
-              </button>
-            </form>
+            {/* Smart Search */}
+            <SmartSearch initialValue={activeSearch} />
 
             {/* Property Types Tabs */}
             <div className="flex items-center justify-center gap-3 overflow-x-auto hide-scroll py-2 px-4 -mx-4">

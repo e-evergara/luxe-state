@@ -175,3 +175,10 @@
   - Cuando una propiedad está desactivada, no debe mostrarse en la página principal de la aplicación (HomeScreen).
   - Cuando una propiedad está desactivada, debe de aparecer en el panel administrativo para futuras actualizaciones.
 ```
+
+6.1 Filter homepage
+```Text|
+  Vamos a mejorar la búsqueda de propiedades con un buscador inteligente, buscando por el título parcial o total de la propiedad, ciudad, código postal, tiene que ser una búsqueda insensible a las mayúsculas y minúsculas
+
+ La búsqueda que tenemos que mejorar es la del homepage /page.tsx
+```

@@ -24,6 +24,8 @@ export interface Property {
   id: string;
   title: string;
   location: string;
+  city?: string;
+  zipCode?: string;
   price: number;
   beds: number;
   baths: number;

@@ -30,6 +30,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const [purpose, setPurpose] = useState<Property['purpose']>(property?.purpose || 'buy');
   
   const [location, setLocation] = useState(property?.location || '');
+  const [city, setCity] = useState(property?.city || '');
+  const [zipCode, setZipCode] = useState(property?.zipCode || '');
   const [area, setArea] = useState(property?.area?.toString() || '');
   const [beds, setBeds] = useState(property?.beds || 0);
   const [baths, setBaths] = useState(property?.baths || 0);
@@ -90,6 +92,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
         type,
         purpose,
         location,
+        city: city.trim() || null,
+        zipCode: zipCode.trim() || null,
         area: Number(area),
         beds,
         baths,
@@ -344,6 +348,30 @@ export function PropertyForm({ property }: PropertyFormProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label htmlFor="city" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">City</label>
+                <input
+                  id="city"
+                  type="text"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  placeholder="e.g. Miami"
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro"
+                />
+              </div>
+              <div>
+                <label htmlFor="zip_code" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">ZIP Code</label>
+                <input
+                  id="zip_code"
+                  type="text"
+                  value={zipCode}
+                  onChange={e => setZipCode(e.target.value)}
+                  placeholder="e.g. 33101"
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label htmlFor="latitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Latitude</label>
                 <input 
                   id="latitude" 
@@ -368,6 +396,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 />
               </div>
             </div>
+
             {latitude !== '' && longitude !== '' && !isNaN(Number(latitude)) && !isNaN(Number(longitude)) && (
               <PropertyMap 
                 latitude={Number(latitude)}

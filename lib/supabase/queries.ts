@@ -26,6 +26,8 @@ interface PropertyRow {
   id: string;
   title: string;
   location: string;
+  city: string | null;
+  zip_code: string | null;
   price: number;
   beds: number;
   baths: number;
@@ -70,6 +72,8 @@ function mapProperty(row: PropertyRow): Property {
     id: row.id,
     title: row.title,
     location: row.location,
+    city: row.city ?? undefined,
+    zipCode: row.zip_code ?? undefined,
     price: row.price,
     beds: row.beds,
     baths: row.baths,
@@ -133,7 +137,7 @@ export async function getProperties(
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
       is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
@@ -158,8 +162,10 @@ export async function getProperties(
   }
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
-    countQuery = countQuery.or(`title.ilike.${term},location.ilike.${term}`);
-    dataQuery = dataQuery.or(`title.ilike.${term},location.ilike.${term}`);
+    const q = `"${term}"`;
+    const searchFilter = `title.ilike.${q},location.ilike.${q},city.ilike.${q},zip_code.ilike.${q}`;
+    countQuery = countQuery.or(searchFilter);
+    dataQuery = dataQuery.or(searchFilter);
   }
 
   const [{ count, error: countError }, { data, error: dataError }] =
@@ -193,7 +199,7 @@ export async function getFeaturedProperties(
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
       is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
@@ -212,7 +218,8 @@ export async function getFeaturedProperties(
   }
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
-    query = query.or(`title.ilike.${term},location.ilike.${term}`);
+    const q = `"${term}"`;
+    query = query.or(`title.ilike.${q},location.ilike.${q},city.ilike.${q},zip_code.ilike.${q}`);
   }
 
   const { data, error } = await query;
@@ -292,7 +299,7 @@ export async function getAllPropertiesAdmin(): Promise<Property[]> {
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
       is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
@@ -318,7 +325,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
       is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
