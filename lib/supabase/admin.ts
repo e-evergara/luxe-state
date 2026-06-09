@@ -17,6 +17,16 @@ export function createAdminClient() {
     );
   }
 
+  // The service role key must be a JWT (starts with "eyJ").
+  // A Publishable Key (e.g. "sb_publishable_...") will NOT bypass RLS.
+  if (!serviceRoleKey.startsWith('eyJ')) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY looks invalid. It must be the JWT service_role key ' +
+      '(starts with "eyJ"), not a Publishable Key. ' +
+      'Get it from: Supabase Dashboard → Settings → API → service_role (secret).',
+    );
+  }
+
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     serviceRoleKey,

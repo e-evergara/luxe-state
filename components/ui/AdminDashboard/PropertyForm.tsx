@@ -1,0 +1,423 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { Property } from '@/types/property';
+import { uploadPropertyImage } from '@/lib/supabase/storage';
+import { savePropertyAction } from '@/app/admin/actions';
+
+const PropertyMap = dynamic(() => import('./Map'), { ssr: false });
+
+interface PropertyFormProps {
+  property?: Property | null;
+}
+
+export function PropertyForm({ property }: PropertyFormProps) {
+  const router = useRouter();
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [title, setTitle] = useState(property?.title || '');
+  const [price, setPrice] = useState(property?.price?.toString() || '');
+  const [status, setStatus] = useState<'active' | 'inactive' | 'archived'>(property?.status || 'active');
+  const [type, setType] = useState<Property['type']>(property?.type || 'house');
+  const [purpose, setPurpose] = useState<Property['purpose']>(property?.purpose || 'buy');
+  
+  const [location, setLocation] = useState(property?.location || '');
+  const [area, setArea] = useState(property?.area?.toString() || '');
+  const [beds, setBeds] = useState(property?.beds || 0);
+  const [baths, setBaths] = useState(property?.baths || 0);
+  const [tag, setTag] = useState(property?.tag || '');
+  const [isFeatured, setIsFeatured] = useState(property?.isFeatured || false);
+  const [latitude, setLatitude] = useState(property?.latitude?.toString() || '');
+  const [longitude, setLongitude] = useState(property?.longitude?.toString() || '');
+
+  // We keep a mix of existing image URLs and new File objects
+  // For simplicity, we just store { url: string, file?: File }
+  const [images, setImages] = useState<{ url: string; file?: File; preview?: string }[]>(
+    property?.images.map(img => ({ url: img.url })) || []
+  );
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newImages = Array.from(e.target.files).map(file => ({
+        url: '',
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      setImages(prev => [...prev, ...newImages]);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Upload new images
+      const uploadedImages = await Promise.all(
+        images.map(async (img) => {
+          if (img.file) {
+            const url = await uploadPropertyImage(img.file, property?.id);
+            return { url };
+          }
+          return { url: img.url };
+        })
+      );
+
+      // 2. Prepare property data
+      const propertyData = {
+        title,
+        price: Number(price),
+        status,
+        type,
+        purpose,
+        location,
+        area: Number(area),
+        beds,
+        baths,
+        tag,
+        isFeatured,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+      };
+
+      // 3. Save via Server Action
+      const result = await savePropertyAction(propertyData, uploadedImages, property?.id);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save property');
+      }
+
+      router.push('/admin/dashboard?tab=properties');
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+      <div className="xl:col-span-8 space-y-8">
+        {error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm font-medium">
+            {error}
+          </div>
+        )}
+        
+        {/* Basic Information */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-8 py-6 border-b border-[#D9ECC8]/30 flex items-center gap-3 bg-gradient-to-r from-[#D9ECC8]/10 to-transparent">
+            <div className="w-8 h-8 rounded-full bg-[#D9ECC8] flex items-center justify-center text-[#19322F]">
+              <span className="material-icons text-lg">info</span>
+            </div>
+            <h2 className="text-xl font-bold text-[#19322F]">Basic Information</h2>
+          </div>
+          
+          <div className="p-8 space-y-6">
+            <div className="group">
+              <label htmlFor="title" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">
+                Property Title <span className="text-red-500">*</span>
+              </label>
+              <input 
+                id="title" 
+                type="text" 
+                required
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Modern Penthouse with Ocean View" 
+                className="w-full text-base px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all font-sf-pro" 
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-sf-pro text-sm">$</span>
+                  <input 
+                    id="price" 
+                    type="number" 
+                    required
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    placeholder="0.00" 
+                    className="w-full pl-7 pr-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-medium font-sf-pro" 
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Status</label>
+                <select 
+                  id="status" 
+                  value={status}
+                  onChange={e => setStatus(e.target.value as Property['status'])}
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="type" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Property Type</label>
+                <select 
+                  id="type" 
+                  value={type}
+                  onChange={e => setType(e.target.value as Property['type'])}
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
+                >
+                  <option value="apartment">Apartment</option>
+                  <option value="house">House</option>
+                  <option value="villa">Villa</option>
+                  <option value="penthouse">Penthouse</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="purpose" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Purpose</label>
+                <select 
+                  id="purpose" 
+                  value={purpose}
+                  onChange={e => setPurpose(e.target.value as Property['purpose'])}
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-base font-sf-pro cursor-pointer"
+                >
+                  <option value="buy">For Sale</option>
+                  <option value="rent">For Rent</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <label htmlFor="tag" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">
+                  Tag
+                </label>
+                <input 
+                  id="tag" 
+                  type="text" 
+                  value={tag}
+                  onChange={e => setTag(e.target.value)}
+                  placeholder="e.g. Exclusive" 
+                  className="w-full text-base px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all font-sf-pro" 
+                />
+              </div>
+              <label className="flex items-center gap-2.5 cursor-pointer group mt-6">
+                <input 
+                  type="checkbox" 
+                  checked={isFeatured}
+                  onChange={e => setIsFeatured(e.target.checked)}
+                  className="w-4 h-4 text-[#006655] border-gray-300 rounded focus:ring-[#006655]" 
+                />
+                <span className="text-sm font-medium text-[#19322F] font-sf-pro transition-colors">Is Featured?</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Gallery */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-8 py-6 border-b border-[#D9ECC8]/30 flex justify-between items-center bg-gradient-to-r from-[#D9ECC8]/10 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#D9ECC8] flex items-center justify-center text-[#19322F]">
+                <span className="material-icons text-lg">image</span>
+              </div>
+              <h2 className="text-xl font-bold text-[#19322F]">Gallery</h2>
+            </div>
+            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded font-sf-pro">JPG, PNG, WEBP</span>
+          </div>
+          <div className="p-8">
+            <div className="relative border-2 border-dashed border-gray-300 rounded-xl bg-gray-50/50 p-10 text-center hover:bg-[#D9ECC8]/10 hover:border-[#006655]/40 transition-colors cursor-pointer group">
+              <input 
+                type="file" 
+                multiple 
+                accept="image/png, image/jpeg, image/webp"
+                onChange={handleImageChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+              />
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-[#006655] group-hover:scale-110 transition-transform duration-300">
+                  <span className="material-icons text-2xl">cloud_upload</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-base font-medium text-[#19322F] font-sf-pro">Click or drag images here</p>
+                  <p className="text-xs text-gray-400 font-sf-pro">Max file size 5MB per image</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+              {images.map((img, idx) => (
+                <div key={idx} className="aspect-square rounded-lg overflow-hidden relative group shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.preview || img.url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-[#19322F]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemoveImage(idx)}
+                      className="w-8 h-8 rounded-full bg-white text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors z-20"
+                    >
+                      <span className="material-icons text-sm">delete</span>
+                    </button>
+                  </div>
+                  {idx === 0 && (
+                    <span className="absolute top-2 left-2 bg-[#006655] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm font-sf-pro uppercase tracking-wider">Main</span>
+                  )}
+                </div>
+              ))}
+              
+              {/* Fallback image placeholder if no images uploaded */}
+              {images.length === 0 && (
+                <div className="aspect-square rounded-lg border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 bg-gray-50 transition-all">
+                  <span className="material-icons text-3xl opacity-50 mb-2">home</span>
+                  <span className="text-[10px] font-medium font-sf-pro uppercase text-center px-2">Default Image<br/>(Will be used)</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="xl:col-span-4 space-y-8">
+        {/* Location */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#D9ECC8]/30 flex items-center gap-3 bg-gradient-to-r from-[#D9ECC8]/10 to-transparent">
+            <div className="w-8 h-8 rounded-full bg-[#D9ECC8] flex items-center justify-center text-[#19322F]">
+              <span className="material-icons text-lg">place</span>
+            </div>
+            <h2 className="text-lg font-bold text-[#19322F]">Location</h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Address / Location</label>
+              <input 
+                id="location" 
+                type="text" 
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="Street Address, City" 
+                className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="latitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Latitude</label>
+                <input 
+                  id="latitude" 
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={e => setLatitude(e.target.value)}
+                  placeholder="e.g. 19.4326" 
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
+                />
+              </div>
+              <div>
+                <label htmlFor="longitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Longitude</label>
+                <input 
+                  id="longitude" 
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={e => setLongitude(e.target.value)}
+                  placeholder="e.g. -99.1332" 
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro" 
+                />
+              </div>
+            </div>
+            {latitude !== '' && longitude !== '' && !isNaN(Number(latitude)) && !isNaN(Number(longitude)) && (
+              <PropertyMap 
+                latitude={Number(latitude)}
+                longitude={Number(longitude)}
+                onChange={(lat, lng) => {
+                  setLatitude(lat.toString());
+                  setLongitude(lng.toString());
+                }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
+          <div className="px-6 py-4 border-b border-[#D9ECC8]/30 flex items-center gap-3 bg-gradient-to-r from-[#D9ECC8]/10 to-transparent">
+            <div className="w-8 h-8 rounded-full bg-[#D9ECC8] flex items-center justify-center text-[#19322F]">
+              <span className="material-icons text-lg">straighten</span>
+            </div>
+            <h2 className="text-lg font-bold text-[#19322F]">Details</h2>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div className="group">
+              <label htmlFor="area" className="text-xs text-gray-500 font-medium font-sf-pro mb-1 block">Area (m²)</label>
+              <input 
+                id="area" 
+                type="number" 
+                value={area}
+                onChange={e => setArea(e.target.value)}
+                placeholder="0" 
+                className="w-full text-left px-3 py-2 rounded border border-gray-200 bg-gray-50 text-[#19322F] focus:bg-white focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all font-sf-pro text-sm" 
+              />
+            </div>
+            
+            <hr className="border-gray-100" />
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-[#19322F] font-sf-pro flex items-center gap-2">
+                  <span className="material-icons text-gray-400 text-sm">bed</span> Bedrooms
+                </label>
+                <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white shadow-sm">
+                  <button type="button" onClick={() => setBeds(Math.max(0, beds - 1))} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors border-r border-gray-100">-</button>
+                  <input type="text" readOnly value={beds} className="w-10 text-center border-none bg-transparent text-[#19322F] p-0 focus:ring-0 text-sm font-medium font-sf-pro" />
+                  <button type="button" onClick={() => setBeds(beds + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors border-l border-gray-100">+</button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-[#19322F] font-sf-pro flex items-center gap-2">
+                  <span className="material-icons text-gray-400 text-sm">shower</span> Bathrooms
+                </label>
+                <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white shadow-sm">
+                  <button type="button" onClick={() => setBaths(Math.max(0, baths - 1))} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors border-r border-gray-100">-</button>
+                  <input type="text" readOnly value={baths} className="w-10 text-center border-none bg-transparent text-[#19322F] p-0 focus:ring-0 text-sm font-medium font-sf-pro" />
+                  <button type="button" onClick={() => setBaths(baths + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors border-l border-gray-100">+</button>
+                </div>
+              </div>
+            </div>
+            
+            <hr className="border-gray-100" />
+            
+            <div className="flex gap-3">
+              <Link href="/admin/dashboard?tab=properties" className="flex-1 py-3 text-center rounded-lg border border-gray-300 bg-white text-[#19322F] font-medium font-sf-pro hover:bg-gray-50 transition-colors text-sm">
+                Cancel
+              </Link>
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="flex-1 py-3 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-colors text-white font-medium font-sf-pro flex justify-center items-center gap-2 text-sm disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Property'}
+                {!loading && <span className="material-icons text-sm">save</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}

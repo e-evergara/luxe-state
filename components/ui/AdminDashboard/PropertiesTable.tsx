@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Property } from '@/types/property';
 
 interface PropertiesTableProps {
@@ -69,9 +70,9 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
           >
             <span className="material-icons text-base">filter_list</span> Filter
           </button>
-          <button className="bg-[#006655] hover:bg-[#006655]/90 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-[#006655]/20 transition-all transform hover:-translate-y-0.5 inline-flex items-center gap-2 cursor-pointer">
+          <Link href="/admin/properties/new" className="bg-[#006655] hover:bg-[#006655]/90 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-[#006655]/20 transition-all transform hover:-translate-y-0.5 inline-flex items-center gap-2 cursor-pointer">
             <span className="material-icons text-base">add</span> Add New Property
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -266,9 +267,9 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
 
                 {/* Actions */}
                 <div className="col-span-12 md:col-span-2 flex items-center justify-end gap-2">
-                  <button className="p-2 rounded-lg text-gray-400 hover:text-[#006655] dark:hover:text-[#D9ECC8] hover:bg-[#D9ECC8]/30 transition-all cursor-pointer">
+                  <Link href={`/admin/properties/${property.id}`} className="p-2 rounded-lg text-gray-400 hover:text-[#006655] dark:hover:text-[#D9ECC8] hover:bg-[#D9ECC8]/30 transition-all cursor-pointer inline-flex items-center justify-center">
                     <span className="material-icons text-xl">edit</span>
-                  </button>
+                  </Link>
                   <button className="p-2 rounded-lg text-gray-400 hover:text-red-650 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer">
                     <span className="material-icons text-xl">delete_outline</span>
                   </button>

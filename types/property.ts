@@ -34,6 +34,8 @@ export interface Property {
   isFeatured: boolean;
   status: 'active' | 'inactive' | 'archived';
   images: PropertyImage[];
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
   createdBy?: string;
   updatedAt: string;
