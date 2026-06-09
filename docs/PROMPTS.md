@@ -106,3 +106,19 @@
 
   Deben de lucir igual a esos diseños, siguiendo los lineamientos de color.
 ```
+
+4.2.1 Dashboard Properties
+
+```Text
+  Necesito que las pantallas de /admin/dashboard?tab=properties, implemente la paginacion de 10 propoerties por pagina y que traiga de 10 en 10 de la base de datos, no todas de golpe.
+```
+
+4.2.2 Dashboard details
+```Text
+   En el panel administrativo necesito:
+
+  - Que el navbar muestre la foto de perfil del usuario si es que la tiene
+  - Necesito una paginación de propiedades y de usuarios
+  - Necesito que los botones de agregar propiedad y agregar usuario sigan los mismos color y diseños
+  - Que el navbar muestre claramente cuál es la ruta activa
+```

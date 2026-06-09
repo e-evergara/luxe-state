@@ -27,6 +27,10 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
   const [purposeFilter, setPurposeFilter] = useState<'all' | 'buy' | 'rent'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | Property['type']>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
@@ -42,6 +46,11 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
   const totalListings = properties.length;
   const activeCount = properties.filter((p) => p.status === 'active').length;
   const pendingCount = properties.filter((p) => p.status === 'inactive' || p.status === 'archived').length;
+
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProperties = filteredProperties.slice(startIndex, endIndex);
 
   return (
     <section id="properties" className="scroll-mt-8">
@@ -78,7 +87,10 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
               type="text"
               placeholder="Buscar por título, ciudad..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-[#1a3833] text-[#19322F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006655]/30 focus:border-[#006655] transition-all"
             />
           </div>
@@ -86,7 +98,10 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
           {/* Purpose Filter */}
           <select
             value={purposeFilter}
-            onChange={(e) => setPurposeFilter(e.target.value as 'all' | 'buy' | 'rent')}
+            onChange={(e) => {
+              setPurposeFilter(e.target.value as 'all' | 'buy' | 'rent');
+              setCurrentPage(1);
+            }}
             className="w-full px-3 py-2 text-sm rounded-lg border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-[#1a3833] text-[#19322F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006655]/30 focus:border-[#006655] transition-all cursor-pointer"
           >
             <option value="all">Todos los propósitos</option>
@@ -97,7 +112,10 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
           {/* Type Filter */}
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as 'all' | Property['type'])}
+            onChange={(e) => {
+              setTypeFilter(e.target.value as 'all' | Property['type']);
+              setCurrentPage(1);
+            }}
             className="w-full px-3 py-2 text-sm rounded-lg border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-[#1a3833] text-[#19322F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006655]/30 focus:border-[#006655] transition-all cursor-pointer"
           >
             <option value="all">Todos los tipos</option>
@@ -154,7 +172,7 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
 
         {/* Property Items */}
         <div className="divide-y divide-gray-100 dark:divide-[#006655]/10">
-          {filteredProperties.map((property) => {
+          {paginatedProperties.map((property) => {
             const thumbnail = property.images[0]?.url;
             return (
               <div
@@ -274,12 +292,26 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
         {/* Footer / Pagination */}
         <div className="px-6 py-4 border-t border-gray-150 dark:border-[#006655]/20 flex items-center justify-between bg-gray-50/50 dark:bg-[#006655]/5">
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing <span className="font-semibold text-[#19322F] dark:text-white">{filteredProperties.length}</span> to <span className="font-semibold text-[#19322F] dark:text-white">{filteredProperties.length}</span> of <span className="font-semibold text-[#19322F] dark:text-white">{properties.length}</span> results
+            Showing <span className="font-semibold text-[#19322F] dark:text-white">{filteredProperties.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-semibold text-[#19322F] dark:text-white">{Math.min(endIndex, filteredProperties.length)}</span> of <span className="font-semibold text-[#19322F] dark:text-white">{filteredProperties.length}</span> results
           </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 text-sm border border-gray-200 dark:border-primary/30 rounded-md text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-primary/20 disabled:opacity-50 cursor-pointer">Previous</button>
-            <button className="px-3 py-1 text-sm border border-gray-200 dark:border-primary/30 rounded-md text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-primary/20 cursor-pointer">Next</button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-200 dark:border-[#006655]/30 rounded-md text-[#19322F] dark:text-gray-300 hover:bg-white dark:hover:bg-[#006655]/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-200 dark:border-[#006655]/30 rounded-md text-[#19322F] dark:text-gray-300 hover:bg-white dark:hover:bg-[#006655]/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>
