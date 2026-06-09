@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -19,6 +19,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const [title, setTitle] = useState(property?.title || '');
   const [price, setPrice] = useState(property?.price?.toString() || '');
@@ -57,8 +60,13 @@ export function PropertyForm({ property }: PropertyFormProps) {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSaveConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowSaveConfirm(false);
     setLoading(true);
     setError(null);
 
@@ -439,17 +447,18 @@ export function PropertyForm({ property }: PropertyFormProps) {
             )}
           </p>
           <div className="flex gap-3 ml-auto">
-            <Link
-              href="/admin/dashboard?tab=properties"
-              className="px-6 py-2.5 rounded-lg border border-gray-300 dark:border-[#006655]/40 bg-white dark:bg-transparent text-[#19322F] dark:text-gray-300 font-medium font-sf-pro hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm"
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(true)}
+              className="px-6 py-2.5 rounded-lg border border-gray-300 dark:border-[#006655]/40 bg-white dark:bg-transparent text-[#19322F] dark:text-gray-300 font-medium font-sf-pro hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm cursor-pointer"
             >
               Cancel
-            </Link>
+            </button>
             <button
               form="property-form"
               type="submit"
               disabled={loading}
-              className="px-8 py-2.5 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-all text-white font-medium font-sf-pro flex items-center gap-2 text-sm disabled:opacity-50 shadow-md shadow-[#006655]/20 hover:shadow-lg hover:-translate-y-0.5"
+              className="px-8 py-2.5 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-all text-white font-medium font-sf-pro flex items-center gap-2 text-sm disabled:opacity-50 shadow-md shadow-[#006655]/20 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
             >
               {loading ? 'Saving...' : 'Save Property'}
               {!loading && <span className="material-icons text-sm">save</span>}
@@ -457,6 +466,173 @@ export function PropertyForm({ property }: PropertyFormProps) {
           </div>
         </div>
       </div>
+
+      {/* Confirm Save Modal */}
+      <ConfirmModal
+        isOpen={showSaveConfirm}
+        onClose={() => setShowSaveConfirm(false)}
+        onConfirm={handleConfirmSave}
+        title="¿Guardar cambios?"
+        message="¿Estás seguro de que deseas guardar los cambios para esta propiedad?"
+        confirmText="Sí, guardar"
+        cancelText="Cancelar"
+        confirmButtonBg="bg-[#006655] hover:bg-[#19322F] dark:hover:bg-[#006655]/80"
+        confirmIcon="save"
+        type="success"
+      />
+
+      {/* Confirm Cancel Modal */}
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          router.push('/admin/dashboard?tab=properties');
+        }}
+        title="¿Descartar cambios?"
+        message="Tienes cambios sin guardar. Si sales ahora, perderás toda la información ingresada."
+        confirmText="Sí, salir"
+        cancelText="Volver"
+        confirmButtonBg="bg-red-600 hover:bg-red-700"
+        confirmIcon="logout"
+        type="warning"
+      />
     </>
+  );
+}
+
+// Reusable Modal Component
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText?: string;
+  confirmButtonBg?: string;
+  confirmIcon?: string;
+  loading?: boolean;
+  type?: 'warning' | 'success' | 'info';
+}
+
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText,
+  cancelText = 'Cancelar',
+  confirmButtonBg = 'bg-[#006655] hover:bg-[#19322F]',
+  confirmIcon,
+  loading = false,
+  type,
+}: ConfirmModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleCancel = (e: Event) => {
+      e.preventDefault();
+      if (!loading) onClose();
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (loading) return;
+      if (e.target === dialog) {
+        onClose();
+      }
+    };
+
+    dialog.addEventListener('cancel', handleCancel);
+    dialog.addEventListener('click', handleClick);
+
+    return () => {
+      dialog.removeEventListener('cancel', handleCancel);
+      dialog.removeEventListener('click', handleClick);
+    };
+  }, [isOpen, onClose, loading]);
+
+  const iconMap = {
+    warning: { icon: 'warning_amber', bg: 'bg-red-50 dark:bg-red-950/30', text: 'text-red-500' },
+    info: { icon: 'info', bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-500' },
+    success: { icon: 'save', bg: 'bg-[#D9ECC8] dark:bg-[#006655]/20', text: 'text-[#19322F] dark:text-[#D9ECC8]' }
+  };
+  const typeConfig = type ? iconMap[type] : null;
+
+  if (!isOpen) return null;
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent border-0 focus:outline-none w-screen h-screen max-w-none max-h-none m-0 backdrop:bg-[#19322F]/40 backdrop:backdrop-blur-sm"
+    >
+      <div className={`bg-white dark:bg-[#0f231f] rounded-2xl shadow-2xl border border-gray-100 dark:border-[#006655]/20 overflow-hidden transform transition-all duration-300 w-full max-w-md ${
+        isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`}>
+        <div className="h-1.5 bg-gradient-to-r from-[#D9ECC8] to-[#006655]" />
+        
+        <div className="p-6">
+          {typeConfig && (
+            <div className={`w-12 h-12 rounded-full ${typeConfig.bg} flex items-center justify-center ${typeConfig.text} mb-4`}>
+              <span className="material-icons text-2xl">{typeConfig.icon}</span>
+            </div>
+          )}
+          <h3 className="text-xl font-bold text-[#19322F] dark:text-white mb-2 font-sf-pro">
+            {title}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-sf-pro leading-relaxed">
+            {message}
+          </p>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-lg border border-gray-200 dark:border-[#006655]/30 bg-white dark:bg-transparent text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm font-sf-pro disabled:opacity-50 cursor-pointer"
+            >
+              {cancelText}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onConfirm}
+              className={`px-5 py-2.5 rounded-lg text-white font-medium flex items-center gap-2 text-sm font-sf-pro shadow-md transition-all hover:shadow-lg disabled:opacity-50 cursor-pointer ${confirmButtonBg}`}
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  {confirmText}
+                  {confirmIcon && <span className="material-icons text-sm">{confirmIcon}</span>}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
   );
 }
