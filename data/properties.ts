@@ -30,6 +30,7 @@ function makeProperty(
     type,
     purpose,
     isFeatured,
+    active: true,
     status: 'active',
     images: [
       {

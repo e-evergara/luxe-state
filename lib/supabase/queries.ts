@@ -26,6 +26,8 @@ interface PropertyRow {
   id: string;
   title: string;
   location: string;
+  city: string | null;
+  zip_code: string | null;
   price: number;
   beds: number;
   baths: number;
@@ -34,6 +36,7 @@ interface PropertyRow {
   type: string;
   purpose: string;
   is_featured: boolean;
+  active: boolean;
   status: string;
   created_at: string;
   created_by: string | null;
@@ -69,6 +72,8 @@ function mapProperty(row: PropertyRow): Property {
     id: row.id,
     title: row.title,
     location: row.location,
+    city: row.city ?? undefined,
+    zipCode: row.zip_code ?? undefined,
     price: row.price,
     beds: row.beds,
     baths: row.baths,
@@ -77,6 +82,7 @@ function mapProperty(row: PropertyRow): Property {
     type: row.type as Property['type'],
     purpose: row.purpose as Property['purpose'],
     isFeatured: row.is_featured,
+    active: row.active,
     status: row.status as Property['status'],
     images: (row.property_images ?? [])
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -123,15 +129,16 @@ export async function getProperties(
   let countQuery = supabase
     .from('properties')
     .select('id', { count: 'exact', head: true })
-    .eq('is_featured', false);
+    .eq('is_featured', false)
+    .eq('active', true);
 
   // Build query for data
   let dataQuery = supabase
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -140,6 +147,7 @@ export async function getProperties(
       `,
     )
     .eq('is_featured', false)
+    .eq('active', true)
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -154,8 +162,10 @@ export async function getProperties(
   }
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
-    countQuery = countQuery.or(`title.ilike.${term},location.ilike.${term}`);
-    dataQuery = dataQuery.or(`title.ilike.${term},location.ilike.${term}`);
+    const q = `"${term}"`;
+    const searchFilter = `title.ilike.${q},location.ilike.${q},city.ilike.${q},zip_code.ilike.${q}`;
+    countQuery = countQuery.or(searchFilter);
+    dataQuery = dataQuery.or(searchFilter);
   }
 
   const [{ count, error: countError }, { data, error: dataError }] =
@@ -189,8 +199,8 @@ export async function getFeaturedProperties(
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -199,6 +209,7 @@ export async function getFeaturedProperties(
       `,
     )
     .eq('is_featured', true)
+    .eq('active', true)
     .order('created_at', { ascending: false })
     .limit(6);
 
@@ -207,7 +218,8 @@ export async function getFeaturedProperties(
   }
   if (search && search.trim()) {
     const term = `%${search.trim()}%`;
-    query = query.or(`title.ilike.${term},location.ilike.${term}`);
+    const q = `"${term}"`;
+    query = query.or(`title.ilike.${q},location.ilike.${q},city.ilike.${q},zip_code.ilike.${q}`);
   }
 
   const { data, error } = await query;
@@ -287,8 +299,8 @@ export async function getAllPropertiesAdmin(): Promise<Property[]> {
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,
@@ -313,8 +325,8 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     .from('properties')
     .select(
       `
-      id, title, location, price, beds, baths, area, tag, type, purpose,
-      is_featured, status, created_at, created_by, updated_at, updated_by,
+      id, title, location, city, zip_code, price, beds, baths, area, tag, type, purpose,
+      is_featured, active, status, created_at, created_by, updated_at, updated_by,
       latitude, longitude,
       property_images (
         id, property_id, url, title, description, sort_order,

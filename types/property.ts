@@ -24,6 +24,8 @@ export interface Property {
   id: string;
   title: string;
   location: string;
+  city?: string;
+  zipCode?: string;
   price: number;
   beds: number;
   baths: number;
@@ -32,6 +34,7 @@ export interface Property {
   type: 'house' | 'apartment' | 'villa' | 'penthouse';
   purpose: 'buy' | 'rent';
   isFeatured: boolean;
+  active: boolean;
   status: 'active' | 'inactive' | 'archived';
   images: PropertyImage[];
   latitude?: number;

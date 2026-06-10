@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -20,6 +20,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const [title, setTitle] = useState(property?.title || '');
   const [price, setPrice] = useState(property?.price?.toString() || '');
   const [status, setStatus] = useState<'active' | 'inactive' | 'archived'>(property?.status || 'active');
@@ -27,11 +30,14 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const [purpose, setPurpose] = useState<Property['purpose']>(property?.purpose || 'buy');
   
   const [location, setLocation] = useState(property?.location || '');
+  const [city, setCity] = useState(property?.city || '');
+  const [zipCode, setZipCode] = useState(property?.zipCode || '');
   const [area, setArea] = useState(property?.area?.toString() || '');
   const [beds, setBeds] = useState(property?.beds || 0);
   const [baths, setBaths] = useState(property?.baths || 0);
   const [tag, setTag] = useState(property?.tag || '');
   const [isFeatured, setIsFeatured] = useState(property?.isFeatured || false);
+  const [active, setActive] = useState(property?.active ?? true);
   const [latitude, setLatitude] = useState(property?.latitude?.toString() || '');
   const [longitude, setLongitude] = useState(property?.longitude?.toString() || '');
 
@@ -56,8 +62,13 @@ export function PropertyForm({ property }: PropertyFormProps) {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSaveConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowSaveConfirm(false);
     setLoading(true);
     setError(null);
 
@@ -81,11 +92,14 @@ export function PropertyForm({ property }: PropertyFormProps) {
         type,
         purpose,
         location,
+        city: city.trim() || null,
+        zipCode: zipCode.trim() || null,
         area: Number(area),
         beds,
         baths,
         tag,
         isFeatured,
+        active,
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
       };
@@ -107,7 +121,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <>
+      <form id="property-form" onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start pb-24">
       <div className="xl:col-span-8 space-y-8">
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm font-medium">
@@ -225,6 +240,24 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 />
                 <span className="text-sm font-medium text-[#19322F] font-sf-pro transition-colors">Is Featured?</span>
               </label>
+              <label className="flex items-center gap-2.5 cursor-pointer group mt-6">
+                <button
+                  type="button"
+                  onClick={() => setActive((prev) => !prev)}
+                  title={active ? 'Desactivar propiedad' : 'Activar propiedad'}
+                  aria-label={active ? 'Desactivar propiedad' : 'Activar propiedad'}
+                  aria-pressed={active}
+                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#006655]"
+                  style={{ backgroundColor: active ? '#006655' : '#D1D5DB' }}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                      active ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-[#19322F] font-sf-pro transition-colors">Visible (Active)</span>
+              </label>
             </div>
           </div>
         </div>
@@ -315,6 +348,30 @@ export function PropertyForm({ property }: PropertyFormProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label htmlFor="city" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">City</label>
+                <input
+                  id="city"
+                  type="text"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  placeholder="e.g. Miami"
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro"
+                />
+              </div>
+              <div>
+                <label htmlFor="zip_code" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">ZIP Code</label>
+                <input
+                  id="zip_code"
+                  type="text"
+                  value={zipCode}
+                  onChange={e => setZipCode(e.target.value)}
+                  placeholder="e.g. 33101"
+                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 bg-white text-[#19322F] placeholder-gray-400 focus:ring-1 focus:ring-[#006655] focus:border-[#006655] transition-all text-sm font-sf-pro"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label htmlFor="latitude" className="block text-sm font-medium text-[#19322F] mb-1.5 font-sf-pro">Latitude</label>
                 <input 
                   id="latitude" 
@@ -339,6 +396,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 />
               </div>
             </div>
+
             {latitude !== '' && longitude !== '' && !isNaN(Number(latitude)) && !isNaN(Number(longitude)) && (
               <PropertyMap 
                 latitude={Number(latitude)}
@@ -399,25 +457,211 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 </div>
               </div>
             </div>
-            
-            <hr className="border-gray-100" />
-            
-            <div className="flex gap-3">
-              <Link href="/admin/dashboard?tab=properties" className="flex-1 py-3 text-center rounded-lg border border-gray-300 bg-white text-[#19322F] font-medium font-sf-pro hover:bg-gray-50 transition-colors text-sm">
-                Cancel
-              </Link>
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="flex-1 py-3 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-colors text-white font-medium font-sf-pro flex justify-center items-center gap-2 text-sm disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save Property'}
-                {!loading && <span className="material-icons text-sm">save</span>}
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </form>
+
+      {/* Sticky Footer — always visible at bottom */}
+      <div className="sticky bottom-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 -mb-10 mt-8 px-4 sm:px-6 lg:px-8 bg-white/90 dark:bg-[#19322F]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#006655]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+        <div className="py-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-3 h-3 rounded-full bg-[#006655] animate-pulse" />
+                Guardando cambios...
+              </span>
+            ) : (
+              <span>Los cambios no guardados se perderán al salir.</span>
+            )}
+          </p>
+          <div className="flex gap-3 ml-auto">
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(true)}
+              className="px-6 py-2.5 rounded-lg border border-gray-300 dark:border-[#006655]/40 bg-white dark:bg-transparent text-[#19322F] dark:text-gray-300 font-medium font-sf-pro hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              form="property-form"
+              type="submit"
+              disabled={loading}
+              className="px-8 py-2.5 rounded-lg bg-[#006655] hover:bg-[#19322F] transition-all text-white font-medium font-sf-pro flex items-center gap-2 text-sm disabled:opacity-50 shadow-md shadow-[#006655]/20 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+            >
+              {loading ? 'Saving...' : 'Save Property'}
+              {!loading && <span className="material-icons text-sm">save</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Confirm Save Modal */}
+      <ConfirmModal
+        isOpen={showSaveConfirm}
+        onClose={() => setShowSaveConfirm(false)}
+        onConfirm={handleConfirmSave}
+        title="¿Guardar cambios?"
+        message="¿Estás seguro de que deseas guardar los cambios para esta propiedad?"
+        confirmText="Sí, guardar"
+        cancelText="Cancelar"
+        confirmButtonBg="bg-[#006655] hover:bg-[#19322F] dark:hover:bg-[#006655]/80"
+        confirmIcon="save"
+        type="success"
+      />
+
+      {/* Confirm Cancel Modal */}
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          router.push('/admin/dashboard?tab=properties');
+        }}
+        title="¿Descartar cambios?"
+        message="Tienes cambios sin guardar. Si sales ahora, perderás toda la información ingresada."
+        confirmText="Sí, salir"
+        cancelText="Volver"
+        confirmButtonBg="bg-red-600 hover:bg-red-700"
+        confirmIcon="logout"
+        type="warning"
+      />
+    </>
+  );
+}
+
+// Reusable Modal Component
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText?: string;
+  confirmButtonBg?: string;
+  confirmIcon?: string;
+  loading?: boolean;
+  type?: 'warning' | 'success' | 'info';
+}
+
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText,
+  cancelText = 'Cancelar',
+  confirmButtonBg = 'bg-[#006655] hover:bg-[#19322F]',
+  confirmIcon,
+  loading = false,
+  type,
+}: ConfirmModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const handleCancel = (e: Event) => {
+      e.preventDefault();
+      if (!loading) onClose();
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (loading) return;
+      if (e.target === dialog) {
+        onClose();
+      }
+    };
+
+    dialog.addEventListener('cancel', handleCancel);
+    dialog.addEventListener('click', handleClick);
+
+    return () => {
+      dialog.removeEventListener('cancel', handleCancel);
+      dialog.removeEventListener('click', handleClick);
+    };
+  }, [isOpen, onClose, loading]);
+
+  const iconMap = {
+    warning: { icon: 'warning_amber', bg: 'bg-red-50 dark:bg-red-950/30', text: 'text-red-500' },
+    info: { icon: 'info', bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-500' },
+    success: { icon: 'save', bg: 'bg-[#D9ECC8] dark:bg-[#006655]/20', text: 'text-[#19322F] dark:text-[#D9ECC8]' }
+  };
+  const typeConfig = type ? iconMap[type] : null;
+
+  if (!isOpen) return null;
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent border-0 focus:outline-none w-screen h-screen max-w-none max-h-none m-0 backdrop:bg-[#19322F]/40 backdrop:backdrop-blur-sm"
+    >
+      <div className={`bg-white dark:bg-[#0f231f] rounded-2xl shadow-2xl border border-gray-100 dark:border-[#006655]/20 overflow-hidden transform transition-all duration-300 w-full max-w-md ${
+        isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`}>
+        <div className="h-1.5 bg-gradient-to-r from-[#D9ECC8] to-[#006655]" />
+        
+        <div className="p-6">
+          {typeConfig && (
+            <div className={`w-12 h-12 rounded-full ${typeConfig.bg} flex items-center justify-center ${typeConfig.text} mb-4`}>
+              <span className="material-icons text-2xl">{typeConfig.icon}</span>
+            </div>
+          )}
+          <h3 className="text-xl font-bold text-[#19322F] dark:text-white mb-2 font-sf-pro">
+            {title}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-sf-pro leading-relaxed">
+            {message}
+          </p>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-lg border border-gray-200 dark:border-[#006655]/30 bg-white dark:bg-transparent text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-[#006655]/10 transition-colors text-sm font-sf-pro disabled:opacity-50 cursor-pointer"
+            >
+              {cancelText}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onConfirm}
+              className={`px-5 py-2.5 rounded-lg text-white font-medium flex items-center gap-2 text-sm font-sf-pro shadow-md transition-all hover:shadow-lg disabled:opacity-50 cursor-pointer ${confirmButtonBg}`}
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  {confirmText}
+                  {confirmIcon && <span className="material-icons text-sm">{confirmIcon}</span>}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
   );
 }

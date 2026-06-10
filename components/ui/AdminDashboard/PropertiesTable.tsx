@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Property } from '@/types/property';
+import { togglePropertyActiveAction } from '@/app/admin/actions';
 
 interface PropertiesTableProps {
   properties: Property[];
@@ -27,8 +28,14 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [purposeFilter, setPurposeFilter] = useState<'all' | 'buy' | 'rent'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | Property['type']>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  // Optimistic active state map: propertyId -> active
+  const [activeStates, setActiveStates] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(properties.map((p) => [p.id, p.active]))
+  );
+  const [, startTransition] = useTransition();
   const itemsPerPage = 10;
 
 
@@ -40,13 +47,31 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
     
     const matchesPurpose = purposeFilter === 'all' || property.purpose === purposeFilter;
     const matchesType = typeFilter === 'all' || property.type === typeFilter;
+    const isActive = activeStates[property.id] ?? property.active;
+    const matchesVisibility =
+      visibilityFilter === 'all' ||
+      (visibilityFilter === 'visible' && isActive) ||
+      (visibilityFilter === 'hidden' && !isActive);
 
-    return matchesSearch && matchesPurpose && matchesType;
+    return matchesSearch && matchesPurpose && matchesType && matchesVisibility;
   });
 
   const totalListings = properties.length;
-  const activeCount = properties.filter((p) => p.status === 'active').length;
-  const pendingCount = properties.filter((p) => p.status === 'inactive' || p.status === 'archived').length;
+  const activeCount = properties.filter((p) => activeStates[p.id] !== false && p.active).length;
+  const disabledCount = properties.filter((p) => activeStates[p.id] === false || (!p.active && activeStates[p.id] === undefined)).length;
+
+  function handleToggleActive(propertyId: string, currentActive: boolean) {
+    const newActive = !currentActive;
+    // Optimistic update
+    setActiveStates((prev) => ({ ...prev, [propertyId]: newActive }));
+    startTransition(async () => {
+      const result = await togglePropertyActiveAction(propertyId, newActive);
+      if (!result.success) {
+        // Revert on error
+        setActiveStates((prev) => ({ ...prev, [propertyId]: currentActive }));
+      }
+    });
+  }
 
   const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -78,7 +103,7 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
 
       {/* Interactive Collapsible Filter Bar */}
       {showFilters && (
-        <div className="mb-6 p-4 bg-white dark:bg-[#152e2a] border border-gray-200 dark:border-[#006655]/25 rounded-xl shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+        <div className="mb-6 p-4 bg-white dark:bg-[#152e2a] border border-gray-200 dark:border-[#006655]/25 rounded-xl shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
           {/* Search bar */}
           <div className="relative w-full">
             <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-[#19322F]/40 dark:text-white/30 text-sm">
@@ -125,6 +150,20 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
             <option value="villa">Villa</option>
             <option value="penthouse">Penthouse</option>
           </select>
+
+          {/* Visibility Filter */}
+          <select
+            value={visibilityFilter}
+            onChange={(e) => {
+              setVisibilityFilter(e.target.value as 'all' | 'visible' | 'hidden');
+              setCurrentPage(1);
+            }}
+            className="w-full px-3 py-2 text-sm rounded-lg border border-[#19322F]/12 dark:border-white/10 bg-white dark:bg-[#1a3833] text-[#19322F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006655]/30 focus:border-[#006655] transition-all cursor-pointer"
+          >
+            <option value="all">Todas las visibilidades</option>
+            <option value="visible">Visibles</option>
+            <option value="hidden">Ocultas</option>
+          </select>
         </div>
       )}
 
@@ -152,11 +191,11 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
 
         <div className="bg-white dark:bg-[#152e2a] p-5 rounded-xl border border-[#006655]/10 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Sale</p>
-            <p className="text-2xl font-bold text-[#19322F] dark:text-white mt-1">{pendingCount}</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Disabled</p>
+            <p className="text-2xl font-bold text-[#19322F] dark:text-white mt-1">{disabledCount}</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-950/20 flex items-center justify-center text-orange-650 dark:text-orange-400">
-            <span className="material-icons">pending</span>
+            <span className="material-icons">visibility_off</span>
           </div>
         </div>
       </div>
@@ -167,7 +206,8 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50/50 dark:bg-[#006655]/5 border-b border-gray-100 dark:border-[#006655]/10 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           <div className="col-span-6">Property Details</div>
           <div className="col-span-2">Price</div>
-          <div className="col-span-2">Status</div>
+          <div className="col-span-1">Status</div>
+          <div className="col-span-1 text-center">Visible</div>
           <div className="col-span-2 text-right">Actions</div>
         </div>
 
@@ -175,10 +215,13 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
         <div className="divide-y divide-gray-100 dark:divide-[#006655]/10">
           {paginatedProperties.map((property) => {
             const thumbnail = property.images[0]?.url;
+            const isActive = activeStates[property.id] ?? property.active;
             return (
               <div
                 key={property.id}
-                className="group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-5 hover:bg-[#EEF6F6]/60 dark:hover:bg-[#006655]/5 transition-colors items-center bg-white dark:bg-[#152e2a]"
+                className={`group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-5 hover:bg-[#EEF6F6]/60 dark:hover:bg-[#006655]/5 transition-all items-center bg-white dark:bg-[#152e2a] ${
+                  !isActive ? 'opacity-55' : ''
+                }`}
               >
                 {/* Details */}
                 <div className="col-span-12 md:col-span-6 flex gap-4 items-center">
@@ -238,7 +281,7 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
                 </div>
 
                 {/* Status */}
-                <div className="col-span-6 md:col-span-2">
+                <div className="col-span-6 md:col-span-1">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                       property.status === 'active'
@@ -263,6 +306,24 @@ export function PropertiesTable({ properties }: PropertiesTableProps) {
                       ? 'Pending'
                       : 'Sold'}
                   </span>
+                </div>
+
+                {/* Active Toggle */}
+                <div className="col-span-6 md:col-span-1 flex items-center justify-center md:justify-center">
+                  <button
+                    onClick={() => handleToggleActive(property.id, isActive)}
+                    title={isActive ? 'Desactivar propiedad' : 'Activar propiedad'}
+                    aria-label={isActive ? 'Desactivar propiedad' : 'Activar propiedad'}
+                    aria-pressed={isActive}
+                    className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#006655] focus-visible:ring-offset-2"
+                    style={{ backgroundColor: isActive ? '#006655' : '#D1D5DB' }}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                        isActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
 
                 {/* Actions */}
